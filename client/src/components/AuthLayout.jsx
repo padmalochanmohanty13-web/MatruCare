@@ -1,6 +1,5 @@
-
 import { Link } from "react-router-dom";
-import { Code2, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft } from "lucide-react";
 
 const AuthLayout = ({
   title,
@@ -17,15 +16,15 @@ const AuthLayout = ({
         {/* Brand */}
         <Link
           to="/"
-          className="mb-8 flex items-center justify-center gap-2"
-          aria-label="Code-a-Nova home"
+          className="mb-8 flex items-center justify-center gap-2.5"
+          aria-label="MatruCare AI home"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600">
-            <Code2 size={25} />
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 shadow-md shadow-indigo-600/30">
+            <Sparkles size={25} className="text-white" />
           </span>
 
           <span className="text-2xl font-bold tracking-tight">
-            Code-a-<span className="text-indigo-400">Nova</span>
+            MatruCare <span className="text-indigo-400">AI</span>
           </span>
         </Link>
 
@@ -68,7 +67,7 @@ const AuthLayout = ({
         </Link>
 
         <p className="mt-5 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} Code-a-Nova. All rights reserved.
+          © {new Date().getFullYear()} MatruCare AI. All rights reserved.
         </p>
       </div>
     </main>

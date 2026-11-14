@@ -1,4 +1,3 @@
-
 import {
   BrowserRouter,
   Routes,
@@ -18,7 +17,6 @@ import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import HackathonRegistration from "./pages/HackathonRegistration.jsx";
 
-
 const App = () => {
   return (
     <BrowserRouter>
@@ -35,13 +33,14 @@ const App = () => {
           {/* Protected pages */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/registration" element={<HackathonRegistration />} />
             <Route
               path="/hackathon-registration"
               element={<HackathonRegistration />}
             />
           </Route>
 
-          {/* Unknown route */}
+          {/* Unknown route fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

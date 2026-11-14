@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
@@ -8,13 +7,12 @@ import {
   Lightbulb,
   Users,
   Code2,
-  Target,
   Laptop,
   ShieldCheck,
   ArrowRight,
-  Trophy,
   Brain,
   Globe,
+  Sparkles,
 } from "lucide-react";
 
 // Core objectives
@@ -23,19 +21,19 @@ const objectives = [
     icon: Lightbulb,
     title: "Encourage Innovation",
     description:
-      "Encourage participants to transform creative ideas into useful technology solutions.",
+      "Encourage participants to transform creative ideas into useful, production-grade technology solutions.",
   },
   {
     icon: Users,
-    title: "Build Collaboration",
+    title: "Foster Collaboration",
     description:
-      "Promote teamwork, communication, and collaborative problem-solving.",
+      "Promote teamwork, peer communication, and collaborative cross-domain problem solving.",
   },
   {
     icon: Code2,
-    title: "Develop Technical Skills",
+    title: "Develop Practical Skills",
     description:
-      "Give participants an opportunity to demonstrate their programming and development skills.",
+      "Give participants hands-on opportunity to build real-world software using modern tech stacks.",
   },
 ];
 
@@ -44,45 +42,38 @@ const tracks = [
   {
     icon: Brain,
     title: "AI / ML",
-    description: "Intelligent applications and data-driven solutions.",
+    description: "Intelligent applications, data-driven solutions, and predictive algorithms.",
   },
   {
     icon: Globe,
     title: "Web Development",
-    description: "Modern websites and full-stack applications.",
+    description: "Modern websites, full-stack web applications, and responsive cloud services.",
   },
   {
     icon: Laptop,
     title: "IoT",
-    description: "Connected devices and smart technology solutions.",
+    description: "Connected devices, telemetry dashboards, and smart automation technology.",
   },
   {
     icon: ShieldCheck,
     title: "Cyber Security",
-    description: "Security-focused applications and digital protection.",
+    description: "Security-focused systems, identity verification, and privacy preservation.",
   },
   {
     icon: Code2,
     title: "Blockchain",
-    description: "Decentralized applications and blockchain concepts.",
+    description: "Decentralized applications, smart contracts, and Web3 trust architecture.",
   },
 ];
 
 const About = () => {
   const { user, loading } = useAuth();
 
-  // Determine destination according to authentication state.
   const actionLink = user ? "/dashboard" : "/signup";
-
-  const actionLabel = user
-    ? "Go to Dashboard"
-    : "Join the Hackathon";
+  const actionLabel = user ? "Go to Dashboard" : "Register for Hackathon";
 
   return (
-    <div
-      id="top"
-      className="min-h-screen bg-slate-950 text-white"
-    >
+    <div id="top" className="min-h-screen bg-slate-950 text-white">
       <Navbar />
 
       <main>
@@ -94,132 +85,104 @@ const About = () => {
           />
 
           <div className="relative mx-auto max-w-5xl text-center">
-            <p className="font-semibold uppercase tracking-widest text-indigo-400">
-              About Code-a-Nova
+            <p className="font-semibold uppercase tracking-widest text-indigo-400 text-xs">
+              About MatruCare AI Hackathon
             </p>
 
-            <h1 className="mt-5 text-4xl font-extrabold sm:text-6xl">
-              Where Ideas Become
-              <span className="block bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                Innovation
-              </span>
+            <h1 className="mt-4 text-4xl font-extrabold sm:text-6xl">
+              Empowering Next-Gen Innovators
             </h1>
 
-            <p className="mx-auto mt-7 max-w-3xl text-base leading-8 text-slate-400 sm:text-lg">
-              Code-a-Nova is a hackathon registration platform designed to
-              bring creative minds together to develop, demonstrate, and
-              showcase innovative technology solutions.
+            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
+              <strong>MatruCare AI</strong> is hosting this nationwide hackathon to discover,
+              mentor, and reward ambitious developers and engineers who are eager to solve
+              pressing challenges through technology.
             </p>
-
-            {!loading && (
-              <Link
-                to={actionLink}
-                className="mt-9 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-7 py-4 font-semibold transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-400"
-              >
-                {actionLabel}
-                <ArrowRight size={18} />
-              </Link>
-            )}
           </div>
         </section>
 
-        {/* ================= MISSION SECTION ================= */}
-        <section className="border-y border-slate-800 bg-slate-900/50 px-5 py-20 sm:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-2">
-            <div>
-              <p className="font-semibold uppercase tracking-widest text-indigo-400">
-                Our Mission
-              </p>
+        {/* ================= ABOUT DETAILS ================= */}
+        <section className="border-y border-slate-800 bg-slate-900/40 px-5 py-20 sm:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-indigo-400">
+                  Mission &amp; Vision
+                </span>
 
-              <h2 className="mt-4 text-3xl font-extrabold sm:text-4xl">
-                Turning Creativity into Real Solutions
-              </h2>
+                <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">
+                  Building Solutions for Tomorrow
+                </h2>
 
-              <p className="mt-6 leading-8 text-slate-400">
-                Our goal is to provide participants with an opportunity to
-                explore technology, work in teams, solve practical problems,
-                and present their ideas through meaningful projects.
-              </p>
+                <p className="mt-5 text-sm sm:text-base leading-7 text-slate-300">
+                  The MatruCare AI Hackathon brings together students and developers from
+                  across disciplines to collaborate on real-world projects in AI/ML, Web Development,
+                  IoT, Cyber Security, and Blockchain.
+                </p>
 
-              <p className="mt-4 leading-8 text-slate-400">
-                Participants can develop their concepts, share prototypes,
-                and demonstrate their technical abilities throughout the
-                hackathon journey.
-              </p>
-            </div>
+                <p className="mt-4 text-sm sm:text-base leading-7 text-slate-400">
+                  Whether you are building as a solo developer or collaborating in a team of up to
+                  5 members, this platform provides transparent registration, dynamic team management,
+                  OTP verification, and personalized tracking for every stage of your hackathon journey.
+                </p>
 
-            <div className="rounded-3xl border border-slate-700 bg-slate-900 p-8">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-400">
-                <Target size={34} />
+                {!loading && (
+                  <div className="mt-8">
+                    <Link
+                      to={actionLink}
+                      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-500"
+                    >
+                      {actionLabel}
+                      <ArrowRight size={17} />
+                    </Link>
+                  </div>
+                )}
               </div>
 
-              <h3 className="mt-7 text-2xl font-bold">
-                Our Vision
-              </h3>
+              <div className="space-y-4">
+                {objectives.map((item) => {
+                  const Icon = item.icon;
 
-              <p className="mt-4 leading-8 text-slate-400">
-                To encourage innovation, strengthen technical capabilities,
-                and create an environment where ideas can grow into practical
-                technology solutions.
-              </p>
+                  return (
+                    <div
+                      key={item.title}
+                      className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-6 transition hover:border-indigo-500/50"
+                    >
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400">
+                        <Icon size={24} />
+                      </div>
+
+                      <div>
+                        <h3 className="font-bold text-white text-base">
+                          {item.title}
+                        </h3>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-400">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ================= OBJECTIVES SECTION ================= */}
+        {/* ================= DOMAINS & TRACKS ================= */}
         <section className="px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
-              <p className="font-semibold uppercase tracking-widest text-indigo-400">
-                What We Encourage
-              </p>
+              <span className="text-xs font-bold uppercase tracking-widest text-indigo-400">
+                Participation Tracks
+              </span>
 
-              <h2 className="mt-4 text-3xl font-extrabold sm:text-4xl">
-                Our Core Objectives
-              </h2>
-            </div>
-
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {objectives.map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <div
-                    key={item.title}
-                    className="rounded-2xl border border-slate-800 bg-slate-900 p-7 transition hover:-translate-y-1 hover:border-indigo-500/50"
-                  >
-                    <div className="inline-flex rounded-xl bg-indigo-500/10 p-3 text-indigo-400">
-                      <Icon size={28} />
-                    </div>
-
-                    <h3 className="mt-5 text-xl font-bold">
-                      {item.title}
-                    </h3>
-
-                    <p className="mt-3 text-sm leading-7 text-slate-400">
-                      {item.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* ================= TECHNOLOGY TRACKS ================= */}
-        <section className="border-y border-slate-800 bg-slate-900/50 px-5 py-20 sm:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="text-center">
-              <p className="font-semibold uppercase tracking-widest text-indigo-400">
-                Explore Technology
-              </p>
-
-              <h2 className="mt-4 text-3xl font-extrabold sm:text-4xl">
-                Technology Tracks
+              <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">
+                Explore Available Domains
               </h2>
 
-              <p className="mt-4 text-slate-400">
-                Explore different domains and bring your ideas to life.
+              <p className="mx-auto mt-4 max-w-2xl text-xs sm:text-sm text-slate-400">
+                Choose the domain that best fits your project. Cross-functional solutions are also encouraged.
               </p>
             </div>
 
@@ -230,56 +193,23 @@ const About = () => {
                 return (
                   <div
                     key={track.title}
-                    className="rounded-2xl border border-slate-800 bg-slate-950 p-6 transition hover:border-indigo-500/50"
+                    className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-slate-700"
                   >
-                    <Icon
-                      className="text-indigo-400"
-                      size={30}
-                    />
+                    <div className="inline-flex rounded-xl bg-indigo-500/10 p-3 text-indigo-400">
+                      <Icon size={24} />
+                    </div>
 
-                    <h3 className="mt-5 text-lg font-bold">
+                    <h3 className="mt-4 font-bold text-white text-base">
                       {track.title}
                     </h3>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                    <p className="mt-2 text-xs leading-5 text-slate-400">
                       {track.description}
                     </p>
                   </div>
                 );
               })}
             </div>
-          </div>
-        </section>
-
-        {/* ================= PARTICIPATION CTA ================= */}
-        <section className="px-5 py-20 sm:px-8">
-          <div className="mx-auto max-w-5xl rounded-3xl border border-indigo-500/30 bg-indigo-950/30 p-8 text-center sm:p-12">
-            <Trophy
-              className="mx-auto text-indigo-400"
-              size={40}
-            />
-
-            <h2 className="mt-5 text-3xl font-extrabold">
-              {user
-                ? "Continue Your Hackathon Journey"
-                : "Ready to Showcase Your Idea?"}
-            </h2>
-
-            <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-400">
-              {user
-                ? "Visit your dashboard to view your profile, check your hackathon registration, and manage your project details."
-                : "Create your account, complete your registration, and take the first step toward presenting your project."}
-            </p>
-
-            {!loading && (
-              <Link
-                to={actionLink}
-                className="mt-8 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-7 py-4 font-semibold transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-400"
-              >
-                {actionLabel}
-                <ArrowRight size={18} />
-              </Link>
-            )}
           </div>
         </section>
       </main>

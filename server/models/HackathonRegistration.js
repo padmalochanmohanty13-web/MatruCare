@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const teamMemberSchema = new mongoose.Schema(
@@ -58,7 +57,7 @@ const hackathonRegistrationSchema = new mongoose.Schema(
       type: String,
       required: [true, "Full name is required"],
       trim: true,
-      minlength: 3,
+      minlength: [3, "Full name must contain at least 3 characters"],
       maxlength: 50,
       match: [
         /^[A-Za-z ]+$/,
@@ -116,6 +115,7 @@ const hackathonRegistrationSchema = new mongoose.Schema(
       required: [true, "Project domain is required"],
       enum: [
         "AI/ML",
+        "Web Dev",
         "Web Development",
         "IoT",
         "Cyber Security",
@@ -172,16 +172,6 @@ const hackathonRegistrationSchema = new mongoose.Schema(
     teamMembers: {
       type: [teamMemberSchema],
       default: [],
-      validate: {
-        validator: function (members) {
-          return (
-            Array.isArray(members) &&
-            members.length === Number(this.teamSize) - 1
-          );
-        },
-        message:
-          "The number of additional team members must equal team size minus one",
-      },
     },
   },
   {

@@ -1,4 +1,3 @@
-
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -17,10 +16,10 @@ dotenv.config();
 
 const app = express();
 
-
 // Middleware
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:3000",
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
@@ -49,7 +48,7 @@ app.use("/api/test", testRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Welcome to Code-a-Nova API",
+    message: "Welcome to MatruCare AI API",
   });
 });
 
@@ -72,7 +71,7 @@ const startServer = async () => {
     const PORT = process.env.PORT || 5000;
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`MatruCare AI Server running on port ${PORT}`);
       console.log(`API: http://localhost:${PORT}`);
     });
   } catch (error) {

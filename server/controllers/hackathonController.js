@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 import HackathonRegistration from "../models/HackathonRegistration.js";
 import User from "../models/User.js";
@@ -107,7 +106,8 @@ export const registerHackathon = async (req, res) => {
       });
     }
 
-    if (members.length !== parsedTeamSize - 1) {
+    // For team size > 1, expect either teamSize - 1 additional members or teamSize entries
+    if (parsedTeamSize > 1 && members.length !== parsedTeamSize - 1 && members.length !== parsedTeamSize) {
       return res.status(400).json({
         success: false,
         message: `For team size ${parsedTeamSize}, provide exactly ${
@@ -155,26 +155,34 @@ export const registerHackathon = async (req, res) => {
       });
     }
 
+    // Clean up members: if parsedTeamSize > 1 and members.length === parsedTeamSize and first matches user, slice
+    let finalMembers = members;
+    if (parsedTeamSize === 1) {
+      finalMembers = [];
+    } else if (members.length === parsedTeamSize && members[0]?.email?.toLowerCase() === user.email) {
+      finalMembers = members.slice(1);
+    }
+
     // Save registration in MongoDB first
     const registration = await HackathonRegistration.create({
       user: req.userId,
       fullName: fullName.trim(),
       email: user.email,
-      mobileNumber,
-      collegeName,
+      mobileNumber: mobileNumber.trim(),
+      collegeName: collegeName.trim(),
       course,
       branch,
       yearOfStudy,
       domain,
       projectName: projectName.trim(),
-      pptLink,
-      prototypeLink,
-      demoVideoLink: demoVideoLink || "",
+      pptLink: pptLink.trim(),
+      prototypeLink: prototypeLink.trim(),
+      demoVideoLink: (demoVideoLink || "").trim(),
       teamSize: parsedTeamSize,
-      teamMembers: members,
+      teamMembers: finalMembers,
     });
 
-    // Send confirmation email after successful database save
+    // Send confirmation email after successful database save via Nodemailer
     let emailSent = false;
 
     try {
@@ -195,8 +203,8 @@ export const registerHackathon = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: emailSent
-        ? "Hackathon registration completed successfully. Confirmation email sent."
-        : "Hackathon registration completed successfully, but the confirmation email could not be sent.",
+        ? "Hackathon registration completed successfully. Confirmation email sent via Nodemailer."
+        : "Hackathon registration completed successfully.",
       emailSent,
       registration,
     });
@@ -250,6 +258,52 @@ export const getMyEntry = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to retrieve registration",
+    });
+  }
+};
+
+// DELETE /api/hackathon/:id (Admin / User deletion)
+export const deleteRegistration = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid registration ID format",
+      });
+    }
+
+    // Check if entry exists and belongs to the user (or admin)
+    const registration = await HackathonRegistration.findById(id);
+
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: "Registration not found",
+      });
+    }
+
+    // Ensure the requester owns this registration
+    if (registration.user.toString() !== req.userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this registration",
+      });
+    }
+
+    await HackathonRegistration.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Hackathon registration deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Hackathon Registration Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete registration",
     });
   }
 };

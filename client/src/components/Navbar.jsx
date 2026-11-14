@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import {
   Link,
@@ -10,10 +9,11 @@ import {
 import {
   Menu,
   X,
-  Code2,
-  ArrowRight,
+  Sparkles,
   LayoutDashboard,
   LogOut,
+  UserPlus,
+  LogIn,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext.jsx";
@@ -39,19 +39,15 @@ const Navbar = () => {
   const linkClass = ({ isActive }) =>
     `text-sm font-medium transition-colors ${
       isActive
-        ? "text-indigo-400"
+        ? "text-indigo-400 font-semibold"
         : "text-slate-300 hover:text-white"
     }`;
 
   const handleLogout = () => {
-    // Clear the authentication session.
     logout();
-
-    // Close the mobile navigation.
     setIsMenuOpen(false);
-
-    // Redirect to login after logout.
-    navigate("/login", { replace: true });
+    // As per Step 6 of brief: Redirect to Home page
+    navigate("/", { replace: true });
   };
 
   return (
@@ -60,15 +56,17 @@ const Navbar = () => {
         className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8"
         aria-label="Main navigation"
       >
-        {/* Logo */}
+        {/* Logo (MatruCare AI) */}
         <Link
           to="/"
-          className="flex items-center gap-2 text-xl font-bold tracking-tight text-white"
+          className="flex items-center gap-2.5 text-xl font-bold tracking-tight text-white group"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600">
-            <Code2 size={23} />
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 shadow-md shadow-indigo-600/30">
+            <Sparkles size={22} className="text-white" />
           </span>
-          Code-a-Nova
+          <span>
+            MatruCare <span className="text-indigo-400">AI</span>
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -100,9 +98,9 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                  className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 shadow-sm"
                 >
-                  <LogOut size={17} />
+                  <LogOut size={16} />
                   Logout
                 </button>
               </>
@@ -110,17 +108,18 @@ const Navbar = () => {
               <>
                 <Link
                   to="/login"
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white"
                 >
+                  <LogIn size={16} />
                   Login
                 </Link>
 
                 <Link
                   to="/signup"
-                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/25 transition hover:bg-indigo-500"
                 >
-                  Get Started
-                  <ArrowRight size={16} />
+                  <UserPlus size={16} />
+                  Signup
                 </Link>
               </>
             ))}
@@ -147,7 +146,7 @@ const Navbar = () => {
           id="mobile-navigation"
           className="border-t border-white/10 bg-slate-950 px-5 py-5 md:hidden"
         >
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
@@ -183,16 +182,18 @@ const Navbar = () => {
                   <>
                     <Link
                       to="/login"
-                      className="rounded-lg border border-white/15 px-4 py-3 text-center text-sm font-semibold text-white"
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 px-4 py-3 text-center text-sm font-semibold text-white"
                     >
+                      <LogIn size={18} />
                       Login
                     </Link>
 
                     <Link
                       to="/signup"
-                      className="rounded-lg bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-indigo-500"
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-indigo-500"
                     >
-                      Get Started
+                      <UserPlus size={18} />
+                      Signup
                     </Link>
                   </>
                 )}

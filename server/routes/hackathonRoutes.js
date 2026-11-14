@@ -1,19 +1,20 @@
-
 import express from "express";
-
 import authMiddleware from "../middleware/authMiddleware.js";
-
 import {
   registerHackathon,
   getMyEntry,
+  deleteRegistration,
 } from "../controllers/hackathonController.js";
 
 const router = express.Router();
 
-// Register for the hackathon
+// CREATE — Hackathon: POST /api/hackathon/register
 router.post("/register", authMiddleware, registerHackathon);
 
-// Get the logged-in user's registration
+// READ — My Entry: GET /api/hackathon/my-entry
 router.get("/my-entry", authMiddleware, getMyEntry);
+
+// DELETE — Entry: DELETE /api/hackathon/:id
+router.delete("/:id", authMiddleware, deleteRegistration);
 
 export default router;

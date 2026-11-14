@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -62,7 +61,7 @@ const Login = () => {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Unable to login. Please check your details and try again."
+        "Unable to login. Please check your credentials and try again."
       );
     } finally {
       setLoading(false);
@@ -72,18 +71,29 @@ const Login = () => {
   return (
     <AuthLayout
       title="Welcome Back"
-      subtitle="Login to your Code-a-Nova account and continue your journey."
+      subtitle="Login to your MatruCare AI account to access your dashboard and registration."
       footerText="Don't have an account?"
-      footerLinkText="Create an account"
+      footerLinkText="Sign Up"
       footerLinkTo="/signup"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Error message */}
+        {error && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-300"
+          >
+            <AlertCircle size={17} className="shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Email */}
         <div>
           <label
             htmlFor="email"
-            className="mb-2 block text-sm font-medium text-slate-200"
+            className="mb-1.5 block text-xs font-semibold text-slate-300"
           >
             Email Address
           </label>
@@ -98,28 +108,20 @@ const Login = () => {
             onChange={handleChange}
             required
             maxLength={254}
-            disabled={loading}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
           />
         </div>
 
         {/* Password */}
         <div>
-          <div className="mb-2 flex items-center justify-between">
-            <label
-              htmlFor="password"
-              className="text-sm font-medium text-slate-200"
-            >
-              Password
-            </label>
-          </div>
+          <label
+            htmlFor="password"
+            className="mb-1.5 block text-xs font-semibold text-slate-300"
+          >
+            Password
+          </label>
 
           <div className="relative">
-            <LockKeyhole
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-            />
-
             <input
               id="password"
               name="password"
@@ -129,52 +131,28 @@ const Login = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              disabled={loading}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 py-3 pl-10 pr-12 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 pr-11 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
             />
 
             <button
               type="button"
-              onClick={() => setShowPassword((previous) => !previous)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-pressed={showPassword}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-white"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-white"
             >
-              {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div
-            role="alert"
-            className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
-          >
-            <AlertCircle size={18} className="mt-0.5 shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
-
-        {/* Login Button */}
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60 shadow-lg shadow-indigo-600/25"
         >
-          {loading ? (
-            <>
-              <LoaderCircle size={19} className="animate-spin" />
-              Signing In...
-            </>
-          ) : (
-            "Login to Account"
-          )}
+          {loading && <LoaderCircle size={18} className="animate-spin" />}
+          {loading ? "Authenticating..." : "Login to Portal"}
         </button>
-
-        <p className="text-center text-xs leading-5 text-slate-500">
-          Your account is protected with secure authentication.
-        </p>
       </form>
     </AuthLayout>
   );

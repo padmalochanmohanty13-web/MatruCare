@@ -1,17 +1,21 @@
-
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import api from "../services/api";
+import api from "../services/api.js";
+import { Sparkles, ArrowLeft, Users, FileText, GraduationCap, User } from "lucide-react";
 
 const colleges = [
   "IIT Bhubaneswar",
   "NIT Rourkela",
   "KIIT University",
   "SOA University",
-  "Odisha University of Technology and Research",
+  "Odisha University of Technology and Research (OUTR)",
   "VSSUT Burla",
   "Government College of Engineering, Keonjhar",
+  "IIT Delhi",
+  "IIT Bombay",
+  "BITS Pilani",
+  "IIIT Hyderabad",
   "Other",
 ];
 
@@ -23,7 +27,7 @@ const years = ["1st", "2nd", "3rd", "4th"];
 
 const domains = [
   "AI/ML",
-  "Web Development",
+  "Web Dev",
   "IoT",
   "Cyber Security",
   "Blockchain",
@@ -48,19 +52,22 @@ const initialForm = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+  "w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-400";
 
-const labelClass = "mb-2 block text-sm font-semibold text-slate-700";
+const labelClass = "mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-300";
 
-const SectionTitle = ({ number, title, description }) => (
-  <div className="mb-6 flex items-start gap-3">
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+const SectionTitle = ({ icon: Icon, number, title, description }) => (
+  <div className="mb-6 flex items-start gap-3 border-b border-slate-800 pb-4">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 text-sm font-bold text-indigo-400">
       {number}
     </span>
 
     <div>
-      <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
+      <h2 className="flex items-center gap-2 text-base font-bold text-white">
+        {Icon && <Icon size={18} className="text-indigo-400" />}
+        {title}
+      </h2>
+      <p className="mt-0.5 text-xs text-slate-400">{description}</p>
     </div>
   </div>
 );
@@ -69,7 +76,7 @@ const FormField = ({ id, label, required = true, children }) => (
   <div>
     <label htmlFor={id} className={labelClass}>
       {label}
-      {required && <span className="ml-1 text-red-500">*</span>}
+      {required && <span className="ml-1 text-red-400">*</span>}
     </label>
     {children}
   </div>
@@ -132,6 +139,9 @@ const HackathonRegistration = () => {
     if (!Number.isInteger(size) || size < 1 || size > 5) return;
 
     setFormData((previous) => {
+      // Dynamic Team Members:
+      // When Team Size = 1 -> Solo (no extra member boxes)
+      // When Team Size > 1 -> Renders member boxes for teammates (size - 1 additional members)
       const requiredMembers = size - 1;
       const updatedMembers = [...previous.teamMembers];
 
@@ -186,7 +196,7 @@ const HackathonRegistration = () => {
     } = formData;
 
     if (!isValidPersonName(fullName)) {
-      return "Full name must contain 3–50 letters and spaces only.";
+      return "Full name must contain at least 3 letters (letters and spaces only).";
     }
 
     if (!isValidEmail(email)) {
@@ -194,11 +204,11 @@ const HackathonRegistration = () => {
     }
 
     if (!isValidIndianMobile(mobileNumber)) {
-      return "Enter a valid 10-digit Indian mobile number starting with 6–9.";
+      return "Enter a valid 10-digit Indian mobile number (e.g., 9876543210).";
     }
 
     if (!colleges.includes(collegeName)) {
-      return "Please select a valid college.";
+      return "Please select a college from the list.";
     }
 
     if (!courses.includes(course)) {
@@ -210,27 +220,27 @@ const HackathonRegistration = () => {
     }
 
     if (!years.includes(yearOfStudy)) {
-      return "Please select a valid year of study.";
+      return "Please select your year of study.";
     }
 
     if (!domains.includes(domain)) {
-      return "Please select a valid project domain.";
+      return "Please select a project domain / track.";
     }
 
     if (projectName.trim().length < 5 || projectName.trim().length > 100) {
-      return "Project name must contain between 5 and 100 characters.";
+      return "Project name must contain at least 5 characters.";
     }
 
     if (!isValidHttpUrl(pptLink)) {
-      return "Enter a valid HTTP or HTTPS PPT link.";
+      return "Enter a valid PPT link (Google Drive / OneDrive shareable link).";
     }
 
     if (!isValidHttpUrl(prototypeLink)) {
-      return "Enter a valid HTTP or HTTPS prototype link.";
+      return "Enter a valid prototype link (GitHub / Figma / Live Demo).";
     }
 
     if (demoVideoLink.trim() && !isValidHttpUrl(demoVideoLink)) {
-      return "Enter a valid HTTP or HTTPS demo video link.";
+      return "Enter a valid demo video link (YouTube / Google Drive URL).";
     }
 
     const size = Number(teamSize);
@@ -239,23 +249,23 @@ const HackathonRegistration = () => {
       return "Team size must be between 1 and 5.";
     }
 
-    if (teamMembers.length !== size - 1) {
-      return "The number of additional team members does not match your team size.";
+    if (size > 1 && teamMembers.length !== size - 1) {
+      return "Please provide details for all additional team members.";
     }
 
     for (let index = 0; index < teamMembers.length; index++) {
       const member = teamMembers[index];
 
       if (!isValidPersonName(member.fullName || "")) {
-        return `Team member ${index + 1} must have a valid name (3–50 letters).`;
+        return `Team member ${index + 2} must have a valid name (minimum 3 letters).`;
       }
 
       if (!isValidEmail(member.email || "")) {
-        return `Enter a valid email address for team member ${index + 1}.`;
+        return `Enter a valid email address for team member ${index + 2}.`;
       }
 
       if (member.email.trim().toLowerCase() === email.trim().toLowerCase()) {
-        return `Team member ${index + 1} cannot use the participant's email address.`;
+        return `Team member ${index + 2} cannot have the same email as the team leader.`;
       }
     }
 
@@ -274,6 +284,7 @@ const HackathonRegistration = () => {
 
     if (validationError) {
       setError(validationError);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -308,18 +319,18 @@ const HackathonRegistration = () => {
 
       setSuccess(
         response.data?.message ||
-          "Your hackathon registration was successful!"
+          "Registration completed! Confirmation email sent via Nodemailer."
       );
 
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
-      }, 1200);
+      }, 1500);
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Registration failed. Please check your connection and try again."
+          "Registration failed. Please verify your details and try again."
       );
-
+      window.scrollTo({ top: 0, behavior: "smooth" });
       submittingRef.current = false;
     } finally {
       setLoading(false);
@@ -327,45 +338,68 @@ const HackathonRegistration = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-950 text-white px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        {/* Page Header */}
+        {/* Header */}
         <header className="mb-8">
           <Link
             to="/dashboard"
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-indigo-400 hover:text-indigo-300"
           >
-            ← Back to Dashboard
+            <ArrowLeft size={14} />
+            Back to Dashboard
           </Link>
 
-          <div className="mt-6">
-            <p className="text-sm font-bold uppercase tracking-wider text-indigo-600">
-              Code-a-Nova 2026
-            </p>
+          <div className="mt-4">
+            <span className="rounded-full bg-indigo-500/15 border border-indigo-500/30 px-3 py-1 text-xs font-semibold text-indigo-300 uppercase tracking-widest">
+              MatruCare AI Hackathon 2026
+            </span>
 
-            <h1 className="mt-2 text-3xl font-extrabold text-slate-900 sm:text-4xl">
-              Hackathon Registration
+            <h1 className="mt-3 text-3xl font-extrabold text-white sm:text-4xl">
+              Hackathon Event Registration
             </h1>
 
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-              Complete the form below to register your project.
-              Review your personal information, academic details,
-              project links, and team information before submitting.
+            <p className="mt-2 text-xs sm:text-sm text-slate-400 leading-6 max-w-2xl">
+              Fill out all required details below. Upon successful submission, your entry
+              will be persisted in MongoDB and an automated confirmation email with full
+              team details will be dispatched from <strong>matrucareai@gmail.com</strong>.
             </p>
           </div>
         </header>
 
+        {/* Feedback Alerts */}
+        {error && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-xs sm:text-sm text-red-300"
+          >
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-xs sm:text-sm text-green-300"
+          >
+            {success}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Section 1: Participant Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 sm:p-7 shadow-xl">
             <SectionTitle
+              icon={User}
               number="1"
               title="Participant Information"
-              description="Enter your personal and contact details."
+              description="Personal and contact details of the team lead / primary registrant."
             />
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <FormField id="fullName" label="Full Name">
+              <FormField id="fullName" label="Full Name (Min 3 chars, letters only)">
                 <input
                   id="fullName"
                   className={inputClass}
@@ -373,32 +407,29 @@ const HackathonRegistration = () => {
                   onChange={(event) =>
                     updateField("fullName", event.target.value)
                   }
-                  placeholder="Enter your full name"
+                  placeholder="Enter full name"
                   minLength={3}
                   maxLength={50}
-                  autoComplete="name"
                   required
                   disabled={loading}
                 />
               </FormField>
 
-              <FormField id="email" label="Email Address">
+              <FormField id="email" label="Email Address (Pre-filled from auth)">
                 <input
                   id="email"
                   className={inputClass}
                   type="email"
                   value={formData.email}
                   readOnly
-                  autoComplete="email"
                   required
                 />
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Your registered account email cannot be changed here.
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Locked to your verified MatruCare AI login account.
                 </p>
               </FormField>
 
-              <FormField id="mobileNumber" label="Mobile Number">
+              <FormField id="mobileNumber" label="Mobile Number (10-digit Indian number)">
                 <input
                   id="mobileNumber"
                   className={inputClass}
@@ -412,8 +443,7 @@ const HackathonRegistration = () => {
                       event.target.value.replace(/\D/g, "").slice(0, 10)
                     )
                   }
-                  placeholder="10-digit mobile number"
-                  autoComplete="tel-national"
+                  placeholder="10-digit mobile number (e.g. 9876543210)"
                   required
                   disabled={loading}
                 />
@@ -422,11 +452,12 @@ const HackathonRegistration = () => {
           </section>
 
           {/* Section 2: Academic Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 sm:p-7 shadow-xl">
             <SectionTitle
+              icon={GraduationCap}
               number="2"
-              title="Academic Information"
-              description="Provide your current college and study details."
+              title="Academic Background"
+              description="College name, degree course, branch, and current year of study."
             />
 
             <div className="grid gap-5 sm:grid-cols-2">
@@ -441,17 +472,16 @@ const HackathonRegistration = () => {
                   required
                   disabled={loading}
                 >
-                  <option value="">Select your college</option>
-
-                  {colleges.map((college) => (
-                    <option key={college} value={college}>
-                      {college}
+                  <option value="">Select College</option>
+                  {colleges.map((col) => (
+                    <option key={col} value={col}>
+                      {col}
                     </option>
                   ))}
                 </select>
               </FormField>
 
-              <FormField id="course" label="Course">
+              <FormField id="course" label="Course / Degree">
                 <select
                   id="course"
                   className={inputClass}
@@ -462,17 +492,16 @@ const HackathonRegistration = () => {
                   required
                   disabled={loading}
                 >
-                  <option value="">Select course</option>
-
-                  {courses.map((course) => (
-                    <option key={course} value={course}>
-                      {course}
+                  <option value="">Select Course</option>
+                  {courses.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
                     </option>
                   ))}
                 </select>
               </FormField>
 
-              <FormField id="branch" label="Branch">
+              <FormField id="branch" label="Branch / Specialization">
                 <select
                   id="branch"
                   className={inputClass}
@@ -483,11 +512,10 @@ const HackathonRegistration = () => {
                   required
                   disabled={loading}
                 >
-                  <option value="">Select branch</option>
-
-                  {branches.map((branch) => (
-                    <option key={branch} value={branch}>
-                      {branch}
+                  <option value="">Select Branch</option>
+                  {branches.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
                     </option>
                   ))}
                 </select>
@@ -504,11 +532,10 @@ const HackathonRegistration = () => {
                   required
                   disabled={loading}
                 >
-                  <option value="">Select year</option>
-
-                  {years.map((year) => (
-                    <option key={year} value={year}>
-                      {year} Year
+                  <option value="">Select Year</option>
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y} Year
                     </option>
                   ))}
                 </select>
@@ -517,11 +544,12 @@ const HackathonRegistration = () => {
           </section>
 
           {/* Section 3: Project Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 sm:p-7 shadow-xl">
             <SectionTitle
+              icon={FileText}
               number="3"
               title="Project Information"
-              description="Tell us about your hackathon project."
+              description="Domain track, project name, presentation slides, and code prototype links."
             />
 
             <div className="space-y-5">
@@ -536,17 +564,16 @@ const HackathonRegistration = () => {
                   required
                   disabled={loading}
                 >
-                  <option value="">Select project domain</option>
-
-                  {domains.map((domain) => (
-                    <option key={domain} value={domain}>
-                      {domain}
+                  <option value="">Select Domain / Track</option>
+                  {domains.map((dom) => (
+                    <option key={dom} value={dom}>
+                      {dom}
                     </option>
                   ))}
                 </select>
               </FormField>
 
-              <FormField id="projectName" label="Project Name">
+              <FormField id="projectName" label="Project Name (Min 5 chars)">
                 <input
                   id="projectName"
                   className={inputClass}
@@ -554,18 +581,15 @@ const HackathonRegistration = () => {
                   onChange={(event) =>
                     updateField("projectName", event.target.value)
                   }
-                  placeholder="Enter your project name"
+                  placeholder="Enter your hackathon project name"
                   minLength={5}
                   maxLength={100}
                   required
                   disabled={loading}
                 />
-                <p className="mt-1 text-xs text-slate-500">
-                  Enter a project name between 5 and 100 characters.
-                </p>
               </FormField>
 
-              <FormField id="pptLink" label="PPT Link">
+              <FormField id="pptLink" label="PPT Link (Google Drive / OneDrive shareable link)">
                 <input
                   id="pptLink"
                   className={inputClass}
@@ -578,12 +602,9 @@ const HackathonRegistration = () => {
                   required
                   disabled={loading}
                 />
-                <p className="mt-1 text-xs text-slate-500">
-                  Provide a shareable Google Drive or OneDrive presentation link.
-                </p>
               </FormField>
 
-              <FormField id="prototypeLink" label="Prototype Link">
+              <FormField id="prototypeLink" label="Prototype Link (GitHub / Figma / Live Demo link)">
                 <input
                   id="prototypeLink"
                   className={inputClass}
@@ -592,17 +613,13 @@ const HackathonRegistration = () => {
                   onChange={(event) =>
                     updateField("prototypeLink", event.target.value)
                   }
-                  placeholder="GitHub, Figma, or live demo URL"
+                  placeholder="https://github.com/username/project or Figma link"
                   required
                   disabled={loading}
                 />
               </FormField>
 
-              <FormField
-                id="demoVideoLink"
-                label="Demo Video Link"
-                required={false}
-              >
+              <FormField id="demoVideoLink" label="Demo Video Link (Optional — YouTube / Drive link)" required={false}>
                 <input
                   id="demoVideoLink"
                   className={inputClass}
@@ -611,7 +628,7 @@ const HackathonRegistration = () => {
                   onChange={(event) =>
                     updateField("demoVideoLink", event.target.value)
                   }
-                  placeholder="YouTube or Google Drive URL (optional)"
+                  placeholder="https://youtube.com/... or Google Drive URL (Optional)"
                   disabled={loading}
                 />
               </FormField>
@@ -619,15 +636,16 @@ const HackathonRegistration = () => {
           </section>
 
           {/* Section 4: Team Information */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 sm:p-7 shadow-xl">
             <SectionTitle
+              icon={Users}
               number="4"
-              title="Team Information"
-              description="Select your team size and add the details of your teammates."
+              title="Team Size & Members"
+              description="Select total team size (1-5). Dynamic entry fields will generate for additional team members."
             />
 
             <div className="max-w-xs">
-              <FormField id="teamSize" label="Team Size">
+              <FormField id="teamSize" label="Total Team Size (1–5)">
                 <select
                   id="teamSize"
                   className={inputClass}
@@ -640,33 +658,32 @@ const HackathonRegistration = () => {
                 >
                   {[1, 2, 3, 4, 5].map((size) => (
                     <option key={size} value={size}>
-                      {size} {size === 1 ? "Member" : "Members"}
+                      {size} {size === 1 ? "Member (Solo)" : "Members"}
                     </option>
                   ))}
                 </select>
               </FormField>
             </div>
 
-            <div className="mt-6 space-y-5">
+            <div className="mt-6 space-y-4">
               {formData.teamMembers.length === 0 ? (
-                <div className="rounded-lg bg-indigo-50 p-4 text-sm text-indigo-700">
-                  You selected individual registration. No additional
-                  team member details are required.
+                <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 text-xs text-indigo-300">
+                  Team Size = 1: Solo registration. No extra team member entry boxes required.
                 </div>
               ) : (
                 formData.teamMembers.map((member, index) => (
                   <div
                     key={index}
-                    className="rounded-xl border border-slate-200 p-4 sm:p-5"
+                    className="rounded-xl border border-slate-800 bg-slate-950 p-4 sm:p-5"
                   >
-                    <h3 className="mb-4 font-bold text-slate-800">
-                      Team Member {index + 1}
+                    <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-indigo-400">
+                      Team Member {index + 2} Details
                     </h3>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <FormField
                         id={`member-name-${index}`}
-                        label="Member Full Name"
+                        label="Member Name"
                       >
                         <input
                           id={`member-name-${index}`}
@@ -679,7 +696,7 @@ const HackathonRegistration = () => {
                               event.target.value
                             )
                           }
-                          placeholder="Enter member name"
+                          placeholder="Teammate full name"
                           minLength={3}
                           maxLength={50}
                           required
@@ -703,7 +720,7 @@ const HackathonRegistration = () => {
                               event.target.value
                             )
                           }
-                          placeholder="Enter member email"
+                          placeholder="Teammate email address"
                           required
                           disabled={loading}
                         />
@@ -715,32 +732,11 @@ const HackathonRegistration = () => {
             </div>
           </section>
 
-          {/* Error and Success Messages */}
-          {error && (
-            <div
-              role="alert"
-              aria-live="assertive"
-              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-            >
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div
-              role="status"
-              aria-live="polite"
-              className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
-            >
-              {success}
-            </div>
-          )}
-
           {/* Form Actions */}
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Link
               to="/dashboard"
-              className="rounded-lg border border-slate-300 px-6 py-3 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              className="rounded-xl border border-slate-700 px-6 py-3 text-center text-xs font-semibold text-slate-300 transition hover:bg-slate-900"
             >
               Cancel
             </Link>
@@ -748,16 +744,11 @@ const HackathonRegistration = () => {
             <button
               type="submit"
               disabled={loading || Boolean(success)}
-              className="rounded-lg bg-indigo-600 px-7 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl bg-indigo-600 px-8 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 shadow-lg shadow-indigo-600/30"
             >
-              {loading ? "Submitting Registration..." : "Submit Registration"}
+              {loading ? "Submitting Registration..." : "Submit Hackathon Registration"}
             </button>
           </div>
-
-          <p className="text-center text-xs text-slate-500">
-            Fields marked with * are mandatory. Please review your
-            information before submitting.
-          </p>
         </form>
       </div>
     </div>

@@ -1,14 +1,19 @@
-
 import nodemailer from "nodemailer";
 
 const createTransporter = () => {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const secure = port === 465;
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER || "matrucareai@gmail.com";
+  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: Number(process.env.SMTP_PORT) === 465,
+    host,
+    port,
+    secure,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user,
+      pass,
     },
   });
 };
@@ -28,37 +33,41 @@ const escapeHtml = (value = "") => {
   });
 };
 
-// Existing OTP email functionality
-const sendOtpEmail = async (email, otp) => {
+// User Signup (OTP) email
+export const sendOtpEmail = async (email, otp) => {
   const transporter = createTransporter();
+  const fromEmail = process.env.EMAIL_FROM || "matrucareai@gmail.com";
 
   await transporter.sendMail({
     from: {
-      name: "Code-a-Nova",
-      address: process.env.EMAIL_FROM,
+      name: "MatruCare AI",
+      address: fromEmail,
     },
     to: email,
-    subject: "Your Code-a-Nova Verification Code",
-    text: `Your Code-a-Nova verification OTP is ${otp}. It expires in 10 minutes.`,
+    subject: "Your MatruCare AI Verification Code",
+    text: `Your MatruCare AI verification OTP is ${otp}. It expires in 10 minutes.`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
-        <h2 style="color: #4338ca;">Code-a-Nova</h2>
-        <p>Hello,</p>
-        <p>Use the following OTP to verify your email address:</p>
-        <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 16px; background: #f3f4f6; text-align: center; border-radius: 8px;">
+        <h2 style="color: #4338ca; margin-bottom: 8px;">MatruCare AI</h2>
+        <p style="font-size: 15px; color: #374151;">Hello,</p>
+        <p style="font-size: 14px; color: #4b5563;">Use the following 6-digit OTP to verify your email address for the <strong>MatruCare AI Hackathon Portal</strong>:</p>
+        <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 16px; background: #f3f4f6; text-align: center; border-radius: 8px; margin: 20px 0; color: #1e1b4b;">
           ${escapeHtml(otp)}
         </div>
-        <p>This OTP expires in <strong>10 minutes</strong>.</p>
-        <p>If you did not request this code, please ignore this email.</p>
-        <p>Regards,<br/>Code-a-Nova Team</p>
+        <p style="font-size: 14px; color: #6b7280;">This OTP is time-limited and expires in <strong>10 minutes</strong>. It will be invalidated after first use.</p>
+        <p style="font-size: 14px; color: #6b7280;">If you did not request this verification code, please ignore this email.</p>
+        <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 24px;">
+          <p style="margin: 0; font-size: 14px; color: #374151;">Regards,<br/><strong style="color: #4338ca;">MatruCare AI Team</strong></p>
+        </div>
       </div>
     `,
   });
 };
 
-// New hackathon registration confirmation email
+// Hackathon registration confirmation email
 export const sendRegistrationConfirmationEmail = async (registration) => {
   const transporter = createTransporter();
+  const fromEmail = process.env.EMAIL_FROM || "matrucareai@gmail.com";
 
   const {
     fullName,
@@ -114,7 +123,7 @@ export const sendRegistrationConfirmationEmail = async (registration) => {
           .join("")
       : `
         <tr>
-          <td colspan="3" style="padding: 12px;">
+          <td colspan="3" style="padding: 12px; color: #6b7280;">
             Individual registration – no additional team members.
           </td>
         </tr>
@@ -126,106 +135,115 @@ export const sendRegistrationConfirmationEmail = async (registration) => {
         timeStyle: "short",
         timeZone: "Asia/Kolkata",
       })
-    : "Not available";
+    : new Date().toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Asia/Kolkata",
+      });
 
   const text = `
 Hello ${fullName},
 
-Congratulations! Your Code-a-Nova Hackathon registration has been successfully received.
+Congratulations! Your registration for the MatruCare AI Hackathon 2026 has been successfully received.
 
-REGISTRATION DETAILS
+EVENT DETAILS
+Event: MatruCare AI Hackathon 2026
+Domain / Track: ${domain}
+Project Name: ${projectName}
 
-Participant: ${fullName}
+PARTICIPANT DETAILS
+Participant Name: ${fullName}
 Email: ${email}
-Mobile: ${mobileNumber}
+Mobile Number: ${mobileNumber}
 College: ${collegeName}
 Course: ${course}
 Branch: ${branch}
 Year of Study: ${yearOfStudy}
 
-PROJECT DETAILS
-
-Domain: ${domain}
-Project Name: ${projectName}
-PPT: ${pptLink}
-Prototype: ${prototypeLink}
-Demo Video: ${demoVideoLink || "Not provided"}
+PROJECT RESOURCES
+PPT Link: ${pptLink}
+Prototype Link: ${prototypeLink}
+Demo Video Link: ${demoVideoLink || "Not provided"}
 
 TEAM DETAILS
-
 Team Size: ${teamSize}
+Team Members:
+1. ${fullName} (Team Lead - ${email})
 ${teamMembersText}
 
 Registration Date: ${registrationDate}
 
-Please keep this email for your records.
+Please keep this confirmation email for your records.
 
 Regards,
-Code-a-Nova Team
+MatruCare AI Team
+matrucareai@gmail.com
   `.trim();
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 20px auto; padding: 28px; color: #1f2937; border: 1px solid #e5e7eb; border-radius: 14px;">
 
-      <div style="text-align: center; padding-bottom: 20px;">
-        <h1 style="color: #4338ca; margin-bottom: 8px;">Code-a-Nova</h1>
-        <p style="color: #16a34a; font-size: 18px; font-weight: bold;">
-          Registration Confirmed!
+      <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
+        <h1 style="color: #4338ca; margin-bottom: 8px;">MatruCare AI</h1>
+        <p style="color: #16a34a; font-size: 18px; font-weight: bold; margin: 0;">
+          Hackathon Registration Confirmed!
+        </p>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">
+          MatruCare AI Hackathon 2026
         </p>
       </div>
 
-      <p>Hello <strong>${safeName}</strong>,</p>
+      <p style="margin-top: 20px; font-size: 15px;">Hello <strong>${safeName}</strong>,</p>
 
-      <p>
+      <p style="font-size: 14px; line-height: 1.6; color: #374151;">
         Congratulations! Your registration for the
-        <strong>Code-a-Nova Hackathon</strong> has been successfully received.
+        <strong>MatruCare AI Hackathon 2026</strong> has been successfully received.
       </p>
 
-      <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="color: #166534; margin-top: 0;">Registration Details</h3>
-        <p><strong>Participant:</strong> ${safeName}</p>
-        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-        <p><strong>Mobile:</strong> ${escapeHtml(mobileNumber)}</p>
-        <p><strong>College:</strong> ${safeCollege}</p>
-        <p><strong>Course:</strong> ${escapeHtml(course)}</p>
-        <p><strong>Branch:</strong> ${escapeHtml(branch)}</p>
-        <p><strong>Year:</strong> ${escapeHtml(yearOfStudy)}</p>
+      <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #bbf7d0;">
+        <h3 style="color: #166534; margin-top: 0; margin-bottom: 12px;">Participant Details</h3>
+        <p style="margin: 6px 0;"><strong>Participant:</strong> ${safeName}</p>
+        <p style="margin: 6px 0;"><strong>Email:</strong> ${escapeHtml(email)}</p>
+        <p style="margin: 6px 0;"><strong>Mobile:</strong> ${escapeHtml(mobileNumber)}</p>
+        <p style="margin: 6px 0;"><strong>College:</strong> ${safeCollege}</p>
+        <p style="margin: 6px 0;"><strong>Course:</strong> ${escapeHtml(course)}</p>
+        <p style="margin: 6px 0;"><strong>Branch:</strong> ${escapeHtml(branch)}</p>
+        <p style="margin: 6px 0;"><strong>Year:</strong> ${escapeHtml(yearOfStudy)}</p>
       </div>
 
-      <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="color: #4338ca; margin-top: 0;">Project Details</h3>
-        <p><strong>Domain:</strong> ${safeDomain}</p>
-        <p><strong>Project Name:</strong> ${safeProjectName}</p>
-        <p>
-          <strong>PPT:</strong>
-          <a href="${escapeHtml(pptLink)}">View Presentation</a>
+      <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+        <h3 style="color: #4338ca; margin-top: 0; margin-bottom: 12px;">Project Details</h3>
+        <p style="margin: 6px 0;"><strong>Domain / Track:</strong> ${safeDomain}</p>
+        <p style="margin: 6px 0;"><strong>Project Name:</strong> ${safeProjectName}</p>
+        <p style="margin: 6px 0;">
+          <strong>PPT Link:</strong>
+          <a href="${escapeHtml(pptLink)}" style="color: #4f46e5; text-decoration: underline;" target="_blank">View Presentation</a>
         </p>
-        <p>
-          <strong>Prototype:</strong>
-          <a href="${escapeHtml(prototypeLink)}">View Prototype</a>
+        <p style="margin: 6px 0;">
+          <strong>Prototype Link:</strong>
+          <a href="${escapeHtml(prototypeLink)}" style="color: #4f46e5; text-decoration: underline;" target="_blank">View Prototype</a>
         </p>
         ${
           demoVideoLink
-            ? `<p><strong>Demo Video:</strong> <a href="${escapeHtml(demoVideoLink)}">Watch Video</a></p>`
-            : "<p><strong>Demo Video:</strong> Not provided</p>"
+            ? `<p style="margin: 6px 0;"><strong>Demo Video:</strong> <a href="${escapeHtml(demoVideoLink)}" style="color: #4f46e5; text-decoration: underline;" target="_blank">Watch Video</a></p>`
+            : '<p style="margin: 6px 0;"><strong>Demo Video:</strong> Not provided</p>'
         }
       </div>
 
       <div style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin: 20px 0;">
-        <h3 style="margin-top: 0;">Team Details</h3>
-        <p><strong>Team Size:</strong> ${escapeHtml(teamSize)}</p>
+        <h3 style="margin-top: 0; color: #1f2937; margin-bottom: 12px;">Team Details (Size: ${escapeHtml(teamSize)})</h3>
 
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
           <thead>
             <tr style="background: #f3f4f6;">
-              <th style="padding: 10px;">No.</th>
-              <th style="padding: 10px;">Name</th>
-              <th style="padding: 10px;">Email</th>
+              <th style="padding: 10px; border-bottom: 1px solid #e5e7eb;">No.</th>
+              <th style="padding: 10px; border-bottom: 1px solid #e5e7eb;">Name</th>
+              <th style="padding: 10px; border-bottom: 1px solid #e5e7eb;">Email</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">1</td>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">1 (Lead)</td>
               <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${safeName}</td>
               <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(email)}</td>
             </tr>
@@ -234,16 +252,16 @@ Code-a-Nova Team
         </table>
       </div>
 
-      <p><strong>Registration Date:</strong> ${escapeHtml(registrationDate)}</p>
+      <p style="font-size: 14px; color: #4b5563;"><strong>Registration Date:</strong> ${escapeHtml(registrationDate)}</p>
 
-      <p>
-        Please keep this email for your records. Thank you for registering
-        with Code-a-Nova!
+      <p style="font-size: 14px; color: #4b5563;">
+        Please keep this confirmation email for your records. We look forward to seeing your project in action!
       </p>
 
       <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 24px;">
-        <p style="margin-bottom: 4px;">Regards,</p>
-        <strong style="color: #4338ca;">Code-a-Nova Team</strong>
+        <p style="margin: 0; font-size: 14px; color: #4b5563;">Regards,</p>
+        <strong style="color: #4338ca; font-size: 15px;">MatruCare AI Team</strong><br/>
+        <span style="font-size: 13px; color: #6b7280;">matrucareai@gmail.com</span>
       </div>
 
     </div>
@@ -251,11 +269,11 @@ Code-a-Nova Team
 
   await transporter.sendMail({
     from: {
-      name: "Code-a-Nova",
-      address: process.env.EMAIL_FROM,
+      name: "MatruCare AI",
+      address: fromEmail,
     },
     to: email,
-    subject: "Code-a-Nova Hackathon – Registration Confirmation",
+    subject: "MatruCare AI Hackathon - Registration Confirmation",
     text,
     html,
   });

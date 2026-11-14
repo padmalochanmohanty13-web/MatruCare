@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
@@ -9,6 +8,7 @@ import {
   Send,
   CheckCircle,
   AlertCircle,
+  Building,
 } from "lucide-react";
 
 const initialForm = {
@@ -42,7 +42,7 @@ const Contact = () => {
     if (formData.name.trim().length < 2) {
       setFeedback({
         type: "error",
-        message: "Please enter your full name.",
+        message: "Please enter your full name (minimum 2 characters).",
       });
       return;
     }
@@ -55,18 +55,10 @@ const Contact = () => {
       return;
     }
 
-    if (formData.subject.trim().length < 3) {
+    if (formData.message.trim().length < 5) {
       setFeedback({
         type: "error",
-        message: "Subject must contain at least 3 characters.",
-      });
-      return;
-    }
-
-    if (formData.message.trim().length < 10) {
-      setFeedback({
-        type: "error",
-        message: "Message must contain at least 10 characters.",
+        message: "Message must contain at least 5 characters.",
       });
       return;
     }
@@ -77,13 +69,15 @@ const Contact = () => {
       const response = await api.post("/api/contact", {
         name: formData.name.trim(),
         email: formData.email.trim(),
-        subject: formData.subject.trim(),
+        subject: formData.subject.trim() || "Hackathon Portal Enquiry",
         message: formData.message.trim(),
       });
 
       setFeedback({
         type: "success",
-        message: response.data.message || "Your message has been sent successfully.",
+        message:
+          response.data.message ||
+          "Your message has been sent successfully to matrucareai@gmail.com.",
       });
 
       setFormData(initialForm);
@@ -107,17 +101,17 @@ const Contact = () => {
         <div className="mx-auto max-w-7xl">
           {/* Heading */}
           <div className="text-center">
-            <p className="font-semibold uppercase tracking-widest text-indigo-400">
-              Contact Us
+            <p className="font-semibold uppercase tracking-widest text-indigo-400 text-xs">
+              Get in Touch
             </p>
 
-            <h1 className="mt-4 text-4xl font-extrabold sm:text-5xl">
-              Let's Start a Conversation
+            <h1 className="mt-3 text-4xl font-extrabold sm:text-5xl">
+              Contact MatruCare AI
             </h1>
 
-            <p className="mx-auto mt-5 max-w-2xl leading-7 text-slate-400">
-              Have questions about Code-a-Nova or the registration process?
-              Send us a message and our team will get back to you.
+            <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-400 text-sm sm:text-base">
+              Have questions about the MatruCare AI Hackathon, rules, eligibility,
+              or registration process? Reach out to us directly or fill in the form below.
             </p>
           </div>
 
@@ -126,37 +120,39 @@ const Contact = () => {
             <div className="space-y-6 lg:col-span-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-7">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400">
-                  <Mail size={25} />
+                  <Mail size={24} />
                 </div>
 
                 <h2 className="mt-5 text-xl font-bold">
-                  Email Support
+                  Official Email
                 </h2>
 
-                <p className="mt-3 text-sm leading-7 text-slate-400">
-                  For questions about registration, participation, or
-                  technical issues, contact our organizing team.
+                <p className="mt-2 text-xs leading-6 text-slate-400">
+                  Our organizing committee actively monitors the hackathon inbox:
                 </p>
 
-                <p className="mt-4 text-sm text-indigo-400">
-                  Use the contact form to send your enquiry.
-                </p>
+                <a
+                  href="mailto:matrucareai@gmail.com"
+                  className="mt-3 inline-block font-mono text-sm font-semibold text-indigo-400 transition hover:text-indigo-300"
+                >
+                  matrucareai@gmail.com
+                </a>
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-7">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400">
-                  <MessageSquare size={25} />
+                  <MessageSquare size={24} />
                 </div>
 
                 <h2 className="mt-5 text-xl font-bold">
-                  What Can We Help With?
+                  What We Support
                 </h2>
 
-                <ul className="mt-4 space-y-3 text-sm text-slate-400">
-                  <li>• Registration assistance</li>
-                  <li>• Project submission questions</li>
-                  <li>• Team participation enquiries</li>
-                  <li>• Technical support</li>
+                <ul className="mt-4 space-y-2.5 text-xs text-slate-400">
+                  <li>• Hackathon registration and team size inquiries</li>
+                  <li>• Email OTP delivery &amp; verification assistance</li>
+                  <li>• Submission guidelines &amp; presentation requirements</li>
+                  <li>• Mentorship schedule &amp; evaluation criteria</li>
                 </ul>
               </div>
             </div>
@@ -167,24 +163,24 @@ const Contact = () => {
                 Send Us a Message
               </h2>
 
-              <p className="mt-2 text-sm text-slate-400">
-                Fill in the details below.
+              <p className="mt-2 text-xs text-slate-400">
+                Direct queries will be answered via email from <strong>matrucareai@gmail.com</strong>.
               </p>
 
               {feedback.message && (
                 <div
                   role="alert"
                   aria-live="polite"
-                  className={`mt-6 flex items-start gap-3 rounded-xl border p-4 text-sm ${
+                  className={`mt-6 flex items-start gap-3 rounded-xl border p-4 text-xs ${
                     feedback.type === "success"
                       ? "border-green-500/30 bg-green-500/10 text-green-300"
                       : "border-red-500/30 bg-red-500/10 text-red-300"
                   }`}
                 >
                   {feedback.type === "success" ? (
-                    <CheckCircle size={20} className="shrink-0" />
+                    <CheckCircle size={18} className="shrink-0" />
                   ) : (
-                    <AlertCircle size={20} className="shrink-0" />
+                    <AlertCircle size={18} className="shrink-0" />
                   )}
 
                   {feedback.message}
@@ -193,8 +189,8 @@ const Contact = () => {
 
               <form onSubmit={handleSubmit} className="mt-7 space-y-5">
                 <div>
-                  <label htmlFor="name" className="mb-2 block text-sm font-medium">
-                    Full Name
+                  <label htmlFor="name" className="mb-2 block text-xs font-semibold text-slate-300">
+                    Full Name <span className="text-red-400">*</span>
                   </label>
 
                   <input
@@ -207,13 +203,13 @@ const Contact = () => {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Enter your full name"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="mb-2 block text-sm font-medium">
-                    Email Address
+                  <label htmlFor="email" className="mb-2 block text-xs font-semibold text-slate-300">
+                    Email Address <span className="text-red-400">*</span>
                   </label>
 
                   <input
@@ -225,55 +221,53 @@ const Contact = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter your email address"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="subject" className="mb-2 block text-sm font-medium">
-                    Subject
+                  <label htmlFor="subject" className="mb-2 block text-xs font-semibold text-slate-300">
+                    Subject (Optional)
                   </label>
 
                   <input
                     id="subject"
                     name="subject"
                     type="text"
-                    required
-                    minLength={3}
                     maxLength={120}
                     value={formData.subject}
                     onChange={handleChange}
-                    placeholder="What is your enquiry about?"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
+                    placeholder="e.g., Team Registration Question"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="message" className="mb-2 block text-sm font-medium">
-                    Message
+                  <label htmlFor="message" className="mb-2 block text-xs font-semibold text-slate-300">
+                    Message <span className="text-red-400">*</span>
                   </label>
 
                   <textarea
                     id="message"
                     name="message"
                     required
-                    minLength={10}
+                    minLength={5}
                     maxLength={3000}
-                    rows={6}
+                    rows={5}
                     value={formData.message}
                     onChange={handleChange}
                     placeholder="Write your message here..."
-                    className="w-full resize-y rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
+                    className="w-full resize-y rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-4 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? "Sending..." : "Send Message"}
-                  {!loading && <Send size={18} />}
+                  {!loading && <Send size={16} />}
                 </button>
               </form>
             </div>

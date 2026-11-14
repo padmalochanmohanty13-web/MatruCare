@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LoaderCircle, AlertCircle } from "lucide-react";
@@ -37,7 +36,7 @@ const Signup = () => {
     const { fullName, email, password, confirmPassword } = formData;
 
     if (!/^[A-Za-z ]{3,80}$/.test(fullName.trim())) {
-      return "Name must contain at least 3 letters and spaces only.";
+      return "Name must contain at least 3 letters (letters and spaces only).";
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -88,7 +87,7 @@ const Signup = () => {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Something went wrong. Please try again."
+        "Something went wrong during signup. Please try again."
       );
     } finally {
       setLoading(false);
@@ -97,35 +96,45 @@ const Signup = () => {
 
   return (
     <AuthLayout
-      title="Create your account"
-      subtitle="Join Code-a-Nova and take your first step toward innovation."
+      title="Create Your Account"
+      subtitle="Join MatruCare AI Hackathon 2026 and turn your ideas into reality."
       footerText="Already have an account?"
       footerLinkText="Login"
       footerLinkTo="/login"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Error message */}
+        {error && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-300"
+          >
+            <AlertCircle size={17} className="shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Full Name */}
         <div>
           <label
             htmlFor="fullName"
-            className="mb-2 block text-sm font-medium text-slate-200"
+            className="mb-1.5 block text-xs font-semibold text-slate-300"
           >
-            Full Name
+            Full Name <span className="text-red-400">*</span>
           </label>
 
           <input
             id="fullName"
             name="fullName"
             type="text"
-            autoComplete="name"
-            placeholder="Enter your full name"
+            placeholder="John Doe"
             value={formData.fullName}
             onChange={handleChange}
             required
+            minLength={3}
             maxLength={80}
-            disabled={loading}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
           />
         </div>
 
@@ -133,23 +142,21 @@ const Signup = () => {
         <div>
           <label
             htmlFor="email"
-            className="mb-2 block text-sm font-medium text-slate-200"
+            className="mb-1.5 block text-xs font-semibold text-slate-300"
           >
-            Email Address
+            Email Address <span className="text-red-400">*</span>
           </label>
 
           <input
             id="email"
             name="email"
             type="email"
-            autoComplete="email"
             placeholder="you@example.com"
             value={formData.email}
             onChange={handleChange}
             required
             maxLength={254}
-            disabled={loading}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
           />
         </div>
 
@@ -157,9 +164,9 @@ const Signup = () => {
         <div>
           <label
             htmlFor="password"
-            className="mb-2 block text-sm font-medium text-slate-200"
+            className="mb-1.5 block text-xs font-semibold text-slate-300"
           >
-            Password
+            Password <span className="text-red-400">*</span>
           </label>
 
           <div className="relative">
@@ -167,39 +174,31 @@ const Signup = () => {
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Create a strong password"
+              placeholder="Minimum 8 characters"
               value={formData.password}
               onChange={handleChange}
               required
               minLength={8}
-              disabled={loading}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 pr-12 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 pr-11 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
             />
 
             <button
               type="button"
-              onClick={() => setShowPassword((previous) => !previous)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-pressed={showPassword}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-white"
             >
-              {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-
-          <p className="mt-2 text-xs text-slate-400">
-            Use at least 8 characters for your password.
-          </p>
         </div>
 
         {/* Confirm Password */}
         <div>
           <label
             htmlFor="confirmPassword"
-            className="mb-2 block text-sm font-medium text-slate-200"
+            className="mb-1.5 block text-xs font-semibold text-slate-300"
           >
-            Confirm Password
+            Confirm Password <span className="text-red-400">*</span>
           </label>
 
           <div className="relative">
@@ -207,66 +206,36 @@ const Signup = () => {
               id="confirmPassword"
               name="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Re-enter your password"
+              placeholder="Re-enter password"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              disabled={loading}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 pr-12 text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+              minLength={8}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 pr-11 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500"
             />
 
             <button
               type="button"
-              onClick={() =>
-                setShowConfirmPassword((previous) => !previous)
-              }
-              aria-label={
-                showConfirmPassword
-                  ? "Hide confirm password"
-                  : "Show confirm password"
-              }
-              aria-pressed={showConfirmPassword}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-white"
             >
-              {showConfirmPassword ? (
-                <EyeOff size={19} />
-              ) : (
-                <Eye size={19} />
-              )}
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div
-            role="alert"
-            className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
-          >
-            <AlertCircle size={18} className="mt-0.5 shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
 
         {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60 shadow-lg shadow-indigo-600/25"
         >
-          {loading ? (
-            <>
-              <LoaderCircle size={19} className="animate-spin" />
-              Creating Account...
-            </>
-          ) : (
-            "Create Account"
-          )}
+          {loading && <LoaderCircle size={18} className="animate-spin" />}
+          {loading ? "Creating Account & Sending OTP..." : "Create Account"}
         </button>
 
-        <p className="text-center text-xs leading-5 text-slate-500">
-          By creating an account, you agree to use Code-a-Nova responsibly.
+        <p className="pt-2 text-center text-[11px] text-slate-500">
+          A 6-digit OTP with 10-minute expiry will be emailed to your inbox.
         </p>
       </form>
     </AuthLayout>
