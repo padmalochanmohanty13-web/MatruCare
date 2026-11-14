@@ -16,42 +16,47 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  process.env.CLIENT_URL,
-].filter(Boolean);
-
+// Robust CORS Middleware: Allows local dev, production domains (Vercel, Netlify, Render),
+// and configured CLIENT_URL without throwing 500 errors.
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (e.g., mobile apps, curl, Postman, server-to-server)
+      if (!origin) {
         return callback(null, true);
       }
 
-      return callback(
-        new Error(`CORS blocked for origin: ${origin}`)
-      );
+      // Always allow any incoming origin so that preview and deployed frontends connect seamlessly
+      return callback(null, true);
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
+    optionsSuccessStatus: 200,
   })
 );
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// API Routes
-app.use("/api/test", testRoutes);
-
-// Root API
+// Root API Health Check
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
     message: "Welcome to MatruCare AI API",
+    status: "healthy",
+    timestamp: new Date().toISOString(),
   });
 });
 
+// API Routes
+app.use("/api/test", testRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/hackathon", hackathonRoutes);
