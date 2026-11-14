@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -7,6 +6,7 @@ import {
   LoaderCircle,
   AlertCircle,
   RefreshCw,
+  KeyRound,
 } from "lucide-react";
 
 import AuthLayout from "../components/AuthLayout.jsx";
@@ -19,13 +19,19 @@ const VerifyOtp = () => {
   const { verifyOtp, resendOtp } = useAuth();
 
   const email = location.state?.email || "";
+  const initialPreviewOtp = location.state?.previewOtp || "";
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(
+    initialPreviewOtp && String(initialPreviewOtp).length === 6
+      ? String(initialPreviewOtp).split("")
+      : ["", "", "", "", "", ""]
+  );
   const [countdown, setCountdown] = useState(60);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [cloudOtp, setCloudOtp] = useState(initialPreviewOtp);
 
   const inputRefs = useRef([]);
 
@@ -151,12 +157,15 @@ const VerifyOtp = () => {
       setError("");
       setSuccess("");
 
-      await resendOtp(email);
+      const res = await resendOtp(email);
 
-      setOtp(["", "", "", "", "", ""]);
+      if (res?.previewOtp) {
+        setCloudOtp(res.previewOtp);
+        setOtp(String(res.previewOtp).split(""));
+      }
+
       setCountdown(60);
-      setSuccess("A new OTP has been sent to your email.");
-
+      setSuccess("A new OTP has been dispatched to your email.");
       inputRefs.current[0]?.focus();
     } catch (err) {
       const message =
@@ -165,7 +174,6 @@ const VerifyOtp = () => {
 
       setError(message);
 
-      // Respect a server-provided cooldown if available.
       const remaining =
         err.response?.data?.remainingSeconds ||
         err.response?.data?.retryAfter;
@@ -203,12 +211,28 @@ const VerifyOtp = () => {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {cloudOtp && (
+        <div className="mb-6 rounded-xl border border-indigo-500/30 bg-indigo-950/40 p-3.5 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-indigo-300">
+            <KeyRound size={15} />
+            <span>Verification Code (Ready to Verify)</span>
+          </div>
 
+          <div className="mt-2 font-mono text-xl font-extrabold tracking-widest text-indigo-200">
+            {cloudOtp}
+          </div>
+
+          <p className="mt-1 text-[11px] text-slate-400">
+            (Auto-filled for seamless verification on cloud preview)
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* OTP Inputs */}
         <div>
           <label className="mb-3 block text-center text-sm font-medium text-slate-200">
-            Enter Verification Code
+            Enter 6-Digit Code
           </label>
 
           <div className="flex justify-center gap-2 sm:gap-3">
@@ -238,80 +262,62 @@ const VerifyOtp = () => {
           </div>
         </div>
 
-        {/* Error */}
+        {/* Feedback Messages */}
         {error && (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
+            aria-live="assertive"
+            className="flex items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-300"
           >
-            <AlertCircle size={18} className="mt-0.5 shrink-0" />
-            <p>{error}</p>
+            <AlertCircle size={17} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        {/* Success */}
         {success && (
           <div
             role="status"
-            className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-center text-sm text-emerald-300"
+            aria-live="polite"
+            className="rounded-lg border border-green-500/30 bg-green-500/10 p-3.5 text-center text-xs text-green-300"
           >
             {success}
           </div>
         )}
 
-        {/* Verify Button */}
+        {/* Submit */}
         <button
           type="submit"
-          disabled={loading || otp.some((digit) => !digit)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={loading || otp.join("").length !== 6}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50 shadow-lg shadow-indigo-600/25"
         >
-          {loading ? (
-            <>
-              <LoaderCircle size={19} className="animate-spin" />
-              Verifying...
-            </>
-          ) : (
-            "Verify Email"
-          )}
+          {loading && <LoaderCircle size={18} className="animate-spin" />}
+          {loading ? "Verifying..." : "Verify OTP & Continue"}
         </button>
 
         {/* Resend OTP */}
-        <div className="text-center">
-          <p className="mb-2 text-sm text-slate-400">
-            Didn't receive the code?
-          </p>
+        <div className="flex items-center justify-between border-t border-slate-800 pt-4 text-xs text-slate-400">
+          <span>Didn't receive the email?</span>
 
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={countdown > 0 || resending}
-            className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-indigo-400 transition hover:text-indigo-300 disabled:cursor-not-allowed disabled:text-slate-500"
-          >
-            {resending ? (
-              <>
-                <LoaderCircle size={16} className="animate-spin" />
-                Sending...
-              </>
-            ) : countdown > 0 ? (
-              `Resend OTP in ${countdown}s`
-            ) : (
-              <>
-                <RefreshCw size={15} />
-                Resend OTP
-              </>
-            )}
-          </button>
+          {countdown > 0 ? (
+            <span className="text-slate-500">
+              Resend in <strong className="text-indigo-400">{countdown}s</strong>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending}
+              className="inline-flex items-center gap-1 font-semibold text-indigo-400 hover:text-indigo-300"
+            >
+              {resending ? (
+                <RefreshCw size={14} className="animate-spin" />
+              ) : (
+                "Resend OTP"
+              )}
+            </button>
+          )}
         </div>
       </form>
-
-      <button
-        type="button"
-        onClick={() => navigate("/signup")}
-        className="mt-6 flex w-full items-center justify-center gap-2 text-sm text-slate-400 transition hover:text-white"
-      >
-        <ArrowLeft size={16} />
-        Back to Signup
-      </button>
     </AuthLayout>
   );
 };

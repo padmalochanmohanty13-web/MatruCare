@@ -4,16 +4,16 @@ const createTransporter = () => {
   const user = process.env.SMTP_USER || process.env.EMAIL_USER || "matrucareai1@gmail.com";
   const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
 
-  // Use service: 'gmail' for fast direct SSL connection (takes ~3s instead of 47s on port 587)
+  // Uses Gmail direct SSL over port 465 with strict timeouts to prevent cloud hanging
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
       user,
       pass,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 4000, // 4-second timeout for cloud networks
+    greetingTimeout: 4000,
+    socketTimeout: 6000,
   });
 };
 
