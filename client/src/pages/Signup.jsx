@@ -79,8 +79,6 @@ const Signup = () => {
         navigate("/verify-otp", {
           state: {
             email: formData.email.trim().toLowerCase(),
-            previewOtp: response.previewOtp,
-            emailSent: response.emailSent,
           },
         });
       } else {

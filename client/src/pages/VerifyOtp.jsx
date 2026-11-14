@@ -6,7 +6,6 @@ import {
   LoaderCircle,
   AlertCircle,
   RefreshCw,
-  KeyRound,
 } from "lucide-react";
 
 import AuthLayout from "../components/AuthLayout.jsx";
@@ -19,19 +18,13 @@ const VerifyOtp = () => {
   const { verifyOtp, resendOtp } = useAuth();
 
   const email = location.state?.email || "";
-  const initialPreviewOtp = location.state?.previewOtp || "";
 
-  const [otp, setOtp] = useState(
-    initialPreviewOtp && String(initialPreviewOtp).length === 6
-      ? String(initialPreviewOtp).split("")
-      : ["", "", "", "", "", ""]
-  );
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [countdown, setCountdown] = useState(60);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [cloudOtp, setCloudOtp] = useState(initialPreviewOtp);
 
   const inputRefs = useRef([]);
 
@@ -157,15 +150,11 @@ const VerifyOtp = () => {
       setError("");
       setSuccess("");
 
-      const res = await resendOtp(email);
+      await resendOtp(email);
 
-      if (res?.previewOtp) {
-        setCloudOtp(res.previewOtp);
-        setOtp(String(res.previewOtp).split(""));
-      }
-
+      setOtp(["", "", "", "", "", ""]);
       setCountdown(60);
-      setSuccess("A new OTP has been dispatched to your email.");
+      setSuccess("A new OTP has been sent to your email inbox.");
       inputRefs.current[0]?.focus();
     } catch (err) {
       const message =
@@ -210,23 +199,6 @@ const VerifyOtp = () => {
           {email}
         </p>
       </div>
-
-      {cloudOtp && (
-        <div className="mb-6 rounded-xl border border-indigo-500/30 bg-indigo-950/40 p-3.5 text-center">
-          <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-indigo-300">
-            <KeyRound size={15} />
-            <span>Verification Code (Ready to Verify)</span>
-          </div>
-
-          <div className="mt-2 font-mono text-xl font-extrabold tracking-widest text-indigo-200">
-            {cloudOtp}
-          </div>
-
-          <p className="mt-1 text-[11px] text-slate-400">
-            (Auto-filled for seamless verification on cloud preview)
-          </p>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* OTP Inputs */}

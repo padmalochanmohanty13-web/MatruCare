@@ -2,18 +2,19 @@ import nodemailer from "nodemailer";
 
 const createTransporter = () => {
   const user = process.env.SMTP_USER || process.env.EMAIL_USER || "matrucareai1@gmail.com";
-  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk";
 
-  // Uses Gmail direct SSL over port 465 with strict timeouts to prevent cloud hanging
   return nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: Number(process.env.SMTP_PORT) === 587 ? false : true,
     auth: {
       user,
       pass,
     },
-    connectionTimeout: 4000, // 4-second timeout for cloud networks
-    greetingTimeout: 4000,
-    socketTimeout: 6000,
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
   });
 };
 
