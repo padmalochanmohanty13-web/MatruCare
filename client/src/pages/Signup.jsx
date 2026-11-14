@@ -85,10 +85,16 @@ const Signup = () => {
         setError(response.message || "Unable to create your account.");
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        "Something went wrong during signup. Please try again."
-      );
+      const serverMsg = err.response?.data?.message || err.response?.data?.error;
+      if (serverMsg) {
+        setError(serverMsg);
+      } else if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+        setError("Request timed out while sending verification email. Please try again.");
+      } else if (!err.response) {
+        setError("Unable to connect to the server. Please check your internet connection.");
+      } else {
+        setError(err.message || "Something went wrong during signup. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

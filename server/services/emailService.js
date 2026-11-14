@@ -1,20 +1,19 @@
 import nodemailer from "nodemailer";
 
 const createTransporter = () => {
-  const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port = Number(process.env.SMTP_PORT) || 587;
-  const secure = port === 465;
-  const user = process.env.SMTP_USER || process.env.EMAIL_USER || "matrucareai@gmail.com";
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER || "matrucareai1@gmail.com";
   const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
 
+  // Use service: 'gmail' for fast direct SSL connection (takes ~3s instead of 47s on port 587)
   return nodemailer.createTransport({
-    host,
-    port,
-    secure,
+    service: "gmail",
     auth: {
       user,
       pass,
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 };
 

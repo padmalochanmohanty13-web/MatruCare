@@ -6,7 +6,6 @@ import { timingSafeEqual } from "crypto";
 import jwt from "jsonwebtoken";
 
 // POST /api/auth/signup
-
 export const signup = async (req, res) => {
   try {
     const { fullName, email, password, confirmPassword } = req.body;
@@ -24,7 +23,7 @@ export const signup = async (req, res) => {
     if (!/^[A-Za-z ]{3,}$/.test(trimmedName)) {
       return res.status(400).json({
         success: false,
-        message: "Enter a valid full name",
+        message: "Enter a valid full name (minimum 3 characters, letters only)",
       });
     }
 
@@ -73,17 +72,20 @@ export const signup = async (req, res) => {
       otpLastSentAt: new Date(),
     });
 
+    console.log(`[AUTH] User created: ${normalizedEmail}. Dispatching OTP via Nodemailer.`);
+
     try {
       await sendOtpEmail(normalizedEmail, otp);
+      console.log(`[AUTH] OTP email sent successfully to ${normalizedEmail}`);
     } catch (emailError) {
-      // Do not leave an account that cannot complete signup.
+      // Do not leave an unverified account that cannot complete signup.
       await User.deleteOne({ _id: newUser._id });
 
-      console.error("OTP Email Error:", emailError.message);
+      console.error("[AUTH] OTP Email delivery failed:", emailError.message);
 
       return res.status(503).json({
         success: false,
-        message: "Unable to send verification email. Please try again.",
+        message: `Unable to send verification email (${emailError.message}). Please verify email credentials.`,
       });
     }
 
@@ -105,11 +107,11 @@ export const signup = async (req, res) => {
       });
     }
 
-    console.error("Signup Error:", error.message);
+    console.error("[AUTH] Signup Error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Internal server error during signup",
+      message: error.message || "Internal server error during signup",
     });
   }
 };
@@ -119,7 +121,6 @@ export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    // 1. Validate required fields
     if (
       typeof email !== "string" ||
       typeof otp !== "string" ||
@@ -135,7 +136,6 @@ export const verifyOtp = async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
     const enteredOtp = otp.trim();
 
-    // 2. Validate six-digit OTP
     if (!/^\d{6}$/.test(enteredOtp)) {
       return res.status(400).json({
         success: false,
@@ -143,7 +143,6 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    // 3. Find user and explicitly select hidden OTP fields
     const user = await User.findOne({
       email: normalizedEmail,
     }).select("+otpHash +otpExpiresAt");
@@ -155,7 +154,6 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    // 4. Check whether email is already verified
     if (user.isEmailVerified) {
       return res.status(409).json({
         success: false,
@@ -163,7 +161,6 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    // 5. Check whether OTP exists
     if (!user.otpHash || !user.otpExpiresAt) {
       return res.status(400).json({
         success: false,
@@ -171,7 +168,6 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    // 6. Check OTP expiration
     if (user.otpExpiresAt.getTime() <= Date.now()) {
       user.otpHash = null;
       user.otpExpiresAt = null;
@@ -183,7 +179,6 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    // 7. Hash entered OTP and compare safely
     const enteredOtpHash = Buffer.from(hashOtp(enteredOtp), "hex");
     const storedOtpHash = Buffer.from(user.otpHash, "hex");
 
@@ -197,14 +192,12 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    // 8. Verify email and invalidate OTP
     user.isEmailVerified = true;
     user.otpHash = null;
     user.otpExpiresAt = null;
 
     await user.save();
 
-    // 9. Send success response
     return res.status(200).json({
       success: true,
       message: "Email verified successfully. You can now log in.",
@@ -225,14 +218,11 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-
-
 // POST /api/auth/resend-otp
 export const resendOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
-    // 1. Validate email
     if (typeof email !== "string" || !email.trim()) {
       return res.status(400).json({
         success: false,
@@ -242,7 +232,6 @@ export const resendOtp = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // 2. Find user and select hidden OTP fields
     const user = await User.findOne({
       email: normalizedEmail,
     }).select("+otpHash +otpExpiresAt +otpLastSentAt");
@@ -254,7 +243,6 @@ export const resendOtp = async (req, res) => {
       });
     }
 
-    // 3. Check email verification status
     if (user.isEmailVerified) {
       return res.status(409).json({
         success: false,
@@ -262,7 +250,6 @@ export const resendOtp = async (req, res) => {
       });
     }
 
-    // 4. Enforce 60-second resend cooldown
     const cooldown = 60 * 1000;
 
     if (user.otpLastSentAt) {
@@ -281,23 +268,19 @@ export const resendOtp = async (req, res) => {
       }
     }
 
-    // 5. Generate a fresh OTP
     const otp = generateOtp();
 
     user.otpHash = hashOtp(otp);
     user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
     user.otpLastSentAt = new Date();
 
-    // 6. Save new OTP and invalidate previous OTP
     await user.save();
 
-    // 7. Send new OTP email
     try {
       await sendOtpEmail(normalizedEmail, otp);
     } catch (emailError) {
       console.error("Resend OTP Email Error:", emailError.message);
 
-      // Clear the undelivered OTP so it cannot be used.
       user.otpHash = null;
       user.otpExpiresAt = null;
       user.otpLastSentAt = null;
@@ -306,11 +289,10 @@ export const resendOtp = async (req, res) => {
 
       return res.status(503).json({
         success: false,
-        message: "Unable to send verification email. Please try again.",
+        message: `Unable to send verification email (${emailError.message}). Please try again.`,
       });
     }
 
-    // 8. Return success
     return res.status(200).json({
       success: true,
       message: "A new OTP has been sent to your email address.",
@@ -327,15 +309,11 @@ export const resendOtp = async (req, res) => {
   }
 };
 
-
-
-
 // POST /api/auth/login
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Validate required fields
     if (
       typeof email !== "string" ||
       typeof password !== "string" ||
@@ -348,10 +326,8 @@ export const login = async (req, res) => {
       });
     }
 
-    // 2. Normalize email
     const normalizedEmail = email.trim().toLowerCase();
 
-    // 3. Check JWT secret configuration
     if (!process.env.JWT_SECRET) {
       console.error("JWT_SECRET is missing from environment variables");
 
@@ -361,7 +337,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // 4. Find user and explicitly retrieve hidden password
     const user = await User.findOne({
       email: normalizedEmail,
     }).select("+password");
@@ -373,7 +348,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // 5. Check email verification
     if (!user.isEmailVerified) {
       return res.status(403).json({
         success: false,
@@ -382,7 +356,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // 6. Compare entered password with hashed password
     const isPasswordValid = await bcrypt.compare(
       password,
       user.password
@@ -395,7 +368,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // 7. Generate JWT token
     const token = jwt.sign(
       {
         userId: user._id.toString(),
@@ -406,7 +378,6 @@ export const login = async (req, res) => {
       }
     );
 
-    // 8. Return successful login response
     return res.status(200).json({
       success: true,
       message: "Login successful",
@@ -427,4 +398,3 @@ export const login = async (req, res) => {
     });
   }
 };
-
