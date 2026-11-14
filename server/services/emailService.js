@@ -1,20 +1,12 @@
 import nodemailer from "nodemailer";
 
 const createTransporter = () => {
-  const user = process.env.SMTP_USER || process.env.EMAIL_USER || "matrucareai1@gmail.com";
-  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk";
-
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT) || 465,
-    secure: Number(process.env.SMTP_PORT) === 587 ? false : true,
+    service: "gmail",
     auth: {
-      user,
-      pass,
+      user: process.env.EMAIL_USER || process.env.SMTP_USER || "matrucareai1@gmail.com",
+      pass: process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk",
     },
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
   });
 };
 

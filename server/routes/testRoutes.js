@@ -11,38 +11,31 @@ router.get("/", (req, res) => {
   });
 });
 
-// Diagnostic endpoint to test SMTP connectivity on Render
+// Diagnostic endpoint to test SMTP connectivity
 router.get("/smtp", async (req, res) => {
-  const user = process.env.SMTP_USER || process.env.EMAIL_USER || "matrucareai1@gmail.com";
+  const user = process.env.EMAIL_USER || process.env.SMTP_USER || "matrucareai1@gmail.com";
   const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk";
-  const port = Number(req.query.port) || 587;
 
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port,
-      secure: port === 465,
+      service: "gmail",
       auth: {
         user,
         pass,
       },
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 8000,
     });
 
     await transporter.verify();
 
     return res.status(200).json({
       success: true,
-      message: `SMTP connection to Gmail port ${port} succeeded!`,
+      message: "Simple Nodemailer Gmail connection verified successfully!",
       user,
-      port,
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: `SMTP connection to port ${port} failed: ${err.message}`,
+      message: `SMTP connection failed: ${err.message}`,
       code: err.code,
       command: err.command,
     });
