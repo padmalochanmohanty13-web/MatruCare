@@ -1,12 +1,23 @@
 import nodemailer from "nodemailer";
 
 const createTransporter = () => {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT);
+  const user = process.env.EMAIL_USER || process.env.SMTP_USER || "matrucareai1@gmail.com";
+  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk";
+
+  if (host && port) {
+    return nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+  }
+
   return nodemailer.createTransport({
     service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER || process.env.SMTP_USER || "matrucareai1@gmail.com",
-      pass: process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk",
-    },
+    auth: { user, pass },
   });
 };
 
