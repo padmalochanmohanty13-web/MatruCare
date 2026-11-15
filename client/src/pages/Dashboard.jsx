@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -23,10 +24,17 @@ import {
   LayoutDashboard,
   Trophy,
   Video,
+  ShieldCheck,
+  Activity,
+  Phone,
 } from "lucide-react";
 
+// ---------------------------------------------
+// REUSABLE COMPONENTS
+// ---------------------------------------------
+
 const InfoCard = ({ label, value, icon: Icon }) => (
-  <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-5">
+  <div className="rounded-xl border border-slate-700/80 bg-[#070d20]/80 p-5 transition hover:border-indigo-500/40">
     <div className="flex items-center gap-2 text-sm text-slate-400">
       {Icon && <Icon size={16} className="text-indigo-400" />}
       {label}
@@ -39,8 +47,9 @@ const InfoCard = ({ label, value, icon: Icon }) => (
 );
 
 const DetailRow = ({ label, value }) => (
-  <div className="flex flex-col gap-1 border-b border-slate-800 py-3 sm:flex-row sm:items-center sm:justify-between">
+  <div className="flex flex-col gap-1 border-b border-slate-800 py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between">
     <span className="text-sm text-slate-400">{label}</span>
+
     <span className="break-words text-sm font-medium text-white sm:text-right">
       {value || "Not provided"}
     </span>
@@ -55,17 +64,24 @@ const ExternalLinkCard = ({ label, url, icon: Icon }) => {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-900 p-4 transition hover:border-indigo-500 hover:bg-slate-800"
+      className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-[#070d20]/80 p-4 transition hover:border-indigo-500 hover:bg-slate-800/80"
     >
       <div className="flex min-w-0 items-center gap-3">
         <Icon size={20} className="shrink-0 text-indigo-400" />
-        <span className="truncate text-sm font-medium text-white">{label}</span>
+
+        <span className="truncate text-sm font-medium text-white">
+          {label}
+        </span>
       </div>
 
       <ExternalLink size={17} className="shrink-0 text-slate-400" />
     </a>
   );
 };
+
+// ---------------------------------------------
+// DASHBOARD
+// ---------------------------------------------
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -74,6 +90,10 @@ const Dashboard = () => {
   const [loadingRegistration, setLoadingRegistration] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+
+  // -------------------------------------------
+  // FETCH REGISTRATION
+  // -------------------------------------------
 
   const fetchRegistration = useCallback(async (isRefresh = false) => {
     try {
@@ -88,6 +108,7 @@ const Dashboard = () => {
       const response = await api.get("/api/hackathon/my-entry");
       const data = response.data;
 
+      // Support the response structures used by the API.
       const entry =
         data?.registration ||
         data?.entry ||
@@ -99,7 +120,7 @@ const Dashboard = () => {
       setRegistration(entry || null);
     } catch (err) {
       if (err.response?.status === 404) {
-        // A 404 means the logged-in user has not registered yet.
+        // No registration found.
         setRegistration(null);
         setError("");
       } else {
@@ -114,15 +135,27 @@ const Dashboard = () => {
     }
   }, []);
 
+  // -------------------------------------------
+  // LOAD REGISTRATION AFTER AUTHENTICATION
+  // -------------------------------------------
+
   useEffect(() => {
     if (!authLoading && user) {
       fetchRegistration();
     }
   }, [authLoading, user, fetchRegistration]);
 
+  // -------------------------------------------
+  // REFRESH
+  // -------------------------------------------
+
   const handleRefresh = () => {
     fetchRegistration(true);
   };
+
+  // -------------------------------------------
+  // USER INFORMATION
+  // -------------------------------------------
 
   const fullName = user?.fullName || "Participant";
   const email = user?.email || "Not available";
@@ -134,30 +167,62 @@ const Dashboard = () => {
     .map((part) => part[0].toUpperCase())
     .join("");
 
+  // -------------------------------------------
+  // REGISTRATION INFORMATION
+  // -------------------------------------------
+
   const teamMembers = Array.isArray(registration?.teamMembers)
     ? registration.teamMembers
     : [];
 
+  // Backend schema uses "year" and "mobile".
+  const registrationYear = registration?.year;
+  const registrationMobile = registration?.mobile;
+
+  // -------------------------------------------
+  // AUTHENTICATION LOADING
+  // -------------------------------------------
+
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+      <div className="flex min-h-screen items-center justify-center bg-[#030617] text-white">
         <div className="text-center">
           <RefreshCw
             className="mx-auto animate-spin text-indigo-400"
-            size={32}
+            size={36}
           />
-          <p className="mt-4 text-slate-400">Loading your profile...</p>
+
+          <p className="mt-4 text-sm text-slate-400">
+            Loading your profile...
+          </p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="flex min-h-screen flex-col bg-slate-950 text-white">
-      <Navbar />
+  // -------------------------------------------
+  // MAIN UI
+  // -------------------------------------------
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-10 sm:px-8">
-        {/* Dashboard Heading */}
+  return (
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#030617] text-white">
+
+      {/* BACKGROUND GLOW */}
+
+      <div className="pointer-events-none absolute -left-40 top-20 h-[500px] w-[500px] rounded-full bg-violet-700/15 blur-[150px]" />
+
+      <div className="pointer-events-none absolute -right-40 bottom-0 h-[500px] w-[500px] rounded-full bg-blue-700/10 blur-[150px]" />
+
+      {/* NAVBAR */}
+
+      <div className="relative z-20">
+        <Navbar />
+      </div>
+
+      <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-5 py-10 sm:px-8">
+
+        {/* DASHBOARD HEADER */}
+
         <section className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-400">
@@ -165,12 +230,16 @@ const Dashboard = () => {
               MatruCare AI Participant Portal
             </div>
 
-            <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">
-              Welcome, {fullName.split(" ")[0]}!
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+              Welcome,{" "}
+              <span className="bg-gradient-to-r from-indigo-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                {fullName.split(" ")[0]}!
+              </span>
             </h1>
 
-            <p className="mt-1 text-sm text-slate-400">
-              Manage your profile and track your MatruCare AI Hackathon registration status.
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
+              Manage your profile and track your MatruCare AI Hackathon
+              registration status.
             </p>
           </div>
 
@@ -178,64 +247,84 @@ const Dashboard = () => {
             type="button"
             onClick={handleRefresh}
             disabled={refreshing || loadingRegistration}
-            className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-slate-700 px-5 py-2.5 text-xs font-semibold text-white transition hover:border-indigo-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50 sm:self-center"
+            className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-slate-700 bg-slate-900/70 px-5 py-3 text-sm font-semibold text-white transition hover:border-indigo-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:self-center"
           >
-            <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+            <RefreshCw
+              size={16}
+              className={refreshing ? "animate-spin" : ""}
+            />
+
             {refreshing ? "Refreshing..." : "Refresh Status"}
           </button>
         </section>
 
-        {/* Main Dashboard Grid */}
+        {/* MAIN GRID */}
+
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Left Column */}
+
+          {/* LEFT COLUMN */}
+
           <div className="space-y-6 lg:col-span-2">
-            {/* Profile Card */}
-            <section className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/60 to-slate-900 p-6 sm:p-8">
+
+            {/* PROFILE CARD */}
+
+            <section className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-[#111b3b] via-[#0f172a] to-[#11102c] p-6 shadow-xl shadow-indigo-950/20 sm:p-8">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-xl font-bold text-white shadow-lg">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-xl font-bold text-white shadow-lg shadow-indigo-600/30">
                   {initials || "U"}
                 </div>
 
                 <div className="min-w-0">
-                  <span className="rounded-full bg-indigo-500/20 px-2.5 py-0.5 text-xs font-semibold text-indigo-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+                    <ShieldCheck size={13} />
                     Verified Participant
                   </span>
 
-                  <h2 className="mt-1.5 break-words text-2xl font-bold">
+                  <h2 className="mt-2 break-words text-2xl font-bold">
                     {fullName}
                   </h2>
 
-                  <p className="mt-1 flex items-center gap-2 break-all text-xs text-slate-400">
-                    <Mail size={14} className="shrink-0" />
+                  <p className="mt-2 flex items-center gap-2 break-all text-sm text-slate-400">
+                    <Mail size={15} className="shrink-0" />
                     {email}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-slate-700/60 pt-4">
-                <p className="text-xs leading-6 text-slate-300">
-                  Welcome to <strong>MatruCare AI Hackathon 2026</strong>. Keep your project
-                  information updated, review your submitted team details, and check your status below.
+              <div className="mt-7 border-t border-slate-700/60 pt-5">
+                <p className="text-sm leading-7 text-slate-300">
+                  Welcome to{" "}
+                  <strong className="text-white">
+                    MatruCare AI Hackathon 2026
+                  </strong>
+                  . Keep your project information updated, review your
+                  submitted team details, and check your registration
+                  status below.
                 </p>
               </div>
             </section>
 
-            {/* Registration Section */}
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-7">
+            {/* REGISTRATION STATUS */}
+
+            <section className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-6 shadow-xl shadow-black/10 sm:p-7">
+
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
-                  <h2 className="text-lg font-bold">Hackathon Registration Status</h2>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <h2 className="text-xl font-bold">
+                    Hackathon Registration Status
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-400">
                     Your team and project submission details
                   </p>
                 </div>
 
-                {!loadingRegistration && (
+                {!loadingRegistration && !error && (
                   <span
-                    className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold ${
+                    className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold ${
                       registration
-                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                        : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                        : "border-amber-500/20 bg-amber-500/10 text-amber-400"
                     }`}
                   >
                     {registration ? (
@@ -243,44 +332,51 @@ const Dashboard = () => {
                     ) : (
                       <Clock size={14} />
                     )}
+
                     {registration ? "Registered" : "Not Registered"}
                   </span>
                 )}
               </div>
 
-              {/* Loading */}
+              {/* LOADING */}
+
               {loadingRegistration && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <RefreshCw
-                    size={28}
+                    size={30}
                     className="animate-spin text-indigo-400"
                   />
-                  <p className="mt-4 text-xs text-slate-400">
+
+                  <p className="mt-4 text-sm text-slate-400">
                     Loading registration details...
                   </p>
                 </div>
               )}
 
-              {/* Error */}
+              {/* ERROR */}
+
               {!loadingRegistration && error && (
                 <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-5">
                   <div className="flex items-start gap-3">
                     <AlertCircle
-                      size={20}
+                      size={21}
                       className="mt-0.5 shrink-0 text-red-400"
                     />
 
                     <div>
-                      <p className="font-semibold text-red-300 text-sm">
+                      <p className="text-sm font-semibold text-red-300">
                         Unable to load registration
                       </p>
 
-                      <p className="mt-1 text-xs text-red-200/80">{error}</p>
+                      <p className="mt-2 text-sm leading-6 text-red-200/80">
+                        {error}
+                      </p>
 
                       <button
                         type="button"
                         onClick={handleRefresh}
-                        className="mt-3 text-xs font-semibold text-red-300 underline"
+                        disabled={refreshing}
+                        className="mt-3 text-sm font-semibold text-red-300 underline disabled:opacity-50"
                       >
                         Try again
                       </button>
@@ -289,54 +385,68 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Not Registered */}
+              {/* NOT REGISTERED */}
+
               {!loadingRegistration && !error && !registration && (
-                <div className="mt-6 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-6 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400">
-                    <Trophy size={28} />
+                <div className="mt-6 rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-violet-500/5 p-7 text-center">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-400">
+                    <Trophy size={30} />
                   </div>
 
-                  <h3 className="mt-4 text-lg font-bold">
-                    You haven't registered for the hackathon yet!
+                  <h3 className="mt-5 text-xl font-bold">
+                    You haven't registered yet!
                   </h3>
 
-                  <p className="mx-auto mt-2 max-w-md text-xs leading-6 text-slate-400">
-                    Submit your academic background, domain track, presentation slide link,
-                    prototype URL, and assemble your team (1-5 members).
+                  <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-slate-400">
+                    Submit your academic background, project domain,
+                    presentation link, prototype URL, and team details.
+                    You can register individually or with a team of up to
+                    five members.
                   </p>
 
                   <Link
                     to="/registration"
-                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 shadow-md shadow-indigo-600/30"
+                    className="mt-7 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:from-indigo-500 hover:to-violet-500"
                   >
                     Register Now
-                    <ArrowRight size={17} />
+                    <ArrowRight size={18} />
                   </Link>
                 </div>
               )}
 
-              {/* Registered */}
+              {/* REGISTERED */}
+
               {!loadingRegistration && !error && registration && (
-                <div className="mt-6 space-y-6">
+                <div className="mt-6 space-y-7">
+
+                  {/* CONFIRMATION */}
+
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
-                      <CheckCircle2 size={16} />
-                      Registration confirmed &amp; verified in MongoDB
+                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-400">
+                      <CheckCircle2 size={17} />
+                      Registration confirmed
                     </div>
 
-                    <h3 className="mt-2 text-xl font-bold text-white">
+                    <h3 className="mt-3 text-xl font-bold text-white">
                       {registration.projectName || "Your Project"}
                     </h3>
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      Confirmation email was dispatched to <strong>{registration.email}</strong> via Nodemailer.
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Your hackathon registration details are available
+                      below. You have already submitted your registration.
                     </p>
+
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-400">
+                      <ShieldCheck size={15} />
+                      Registration Completed
+                    </div>
                   </div>
 
-                  {/* Registration Details */}
+                  {/* REGISTRATION DETAILS */}
+
                   <div>
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
-                      <FileText size={17} className="text-indigo-400" />
+                    <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-white">
+                      <FileText size={18} className="text-indigo-400" />
                       Registration Details
                     </h3>
 
@@ -377,20 +487,25 @@ const Dashboard = () => {
 
                       <InfoCard
                         label="Year of Study"
-                        value={registration.yearOfStudy ? `${registration.yearOfStudy} Year` : "Not provided"}
+                        value={
+                          registrationYear
+                            ? `${registrationYear} Year`
+                            : "Not provided"
+                        }
                         icon={CalendarDays}
                       />
                     </div>
                   </div>
 
-                  {/* Participant Information */}
+                  {/* PARTICIPANT INFORMATION */}
+
                   <div>
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-                      <UserRound size={17} className="text-indigo-400" />
+                    <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
+                      <UserRound size={18} className="text-indigo-400" />
                       Participant Information
                     </h3>
 
-                    <div className="rounded-xl border border-slate-700 bg-slate-950/60 px-5">
+                    <div className="rounded-xl border border-slate-700 bg-[#070d20]/80 px-5">
                       <DetailRow
                         label="Full Name"
                         value={registration.fullName}
@@ -403,7 +518,7 @@ const Dashboard = () => {
 
                       <DetailRow
                         label="Mobile Number"
-                        value={registration.mobileNumber}
+                        value={registrationMobile}
                       />
 
                       <DetailRow
@@ -413,53 +528,73 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  {/* Team Members */}
+                  {/* TEAM MEMBERS */}
+
                   <div>
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-                      <Users size={17} className="text-indigo-400" />
+                    <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
+                      <Users size={18} className="text-indigo-400" />
                       Team Members
                     </h3>
 
                     {teamMembers.length > 0 ? (
-                      <div className="space-y-2.5">
-                        <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/30 p-3.5 flex items-center justify-between">
+                      <div className="space-y-3">
+
+                        {/* TEAM LEADER */}
+
+                        <div className="flex flex-col justify-between gap-3 rounded-xl border border-indigo-500/30 bg-indigo-950/30 p-4 sm:flex-row sm:items-center">
                           <div>
-                            <span className="text-xs font-bold text-indigo-300">1. {registration.fullName} (Lead)</span>
-                            <p className="text-xs text-slate-400">{registration.email}</p>
+                            <p className="text-sm font-bold text-indigo-300">
+                              1. {registration.fullName} (Lead)
+                            </p>
+
+                            <p className="mt-1 break-all text-xs text-slate-400">
+                              {registration.email}
+                            </p>
                           </div>
-                          <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-300">Team Leader</span>
+
+                          <span className="w-fit rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-semibold text-indigo-300">
+                            Team Leader
+                          </span>
                         </div>
+
+                        {/* OTHER MEMBERS */}
 
                         {teamMembers.map((member, index) => (
                           <div
                             key={`${member.email || "member"}-${index}`}
-                            className="rounded-xl border border-slate-700 bg-slate-950/60 p-3.5 flex items-center justify-between"
+                            className="flex flex-col justify-between gap-3 rounded-xl border border-slate-700 bg-[#070d20]/80 p-4 sm:flex-row sm:items-center"
                           >
                             <div>
-                              <p className="font-semibold text-white text-xs">
+                              <p className="text-sm font-semibold text-white">
                                 {index + 2}. {member.fullName}
                               </p>
-                              <p className="break-all text-xs text-slate-400">
+
+                              <p className="mt-1 break-all text-xs text-slate-400">
                                 {member.email}
                               </p>
                             </div>
-                            <span className="text-[11px] text-slate-400">Member {index + 2}</span>
+
+                            <span className="text-xs text-slate-400">
+                              Member {index + 2}
+                            </span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
-                        <p className="text-xs text-slate-400">
-                          Individual registration (Solo participant) — no additional team members.
+                      <div className="rounded-xl border border-slate-700 bg-[#070d20]/80 p-5">
+                        <p className="text-sm leading-6 text-slate-400">
+                          Individual registration (Solo participant) —
+                          no additional team members.
                         </p>
                       </div>
                     )}
                   </div>
 
-                  {/* Project Links */}
+                  {/* PROJECT RESOURCES */}
+
                   <div>
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-                      <Code2 size={17} className="text-indigo-400" />
+                    <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
+                      <Code2 size={18} className="text-indigo-400" />
                       Project Resources
                     </h3>
 
@@ -484,69 +619,142 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  {/* Submission Date */}
+                  {/* REGISTRATION DATE */}
+
                   {registration.createdAt && (
-                    <div className="border-t border-slate-800 pt-3 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 border-t border-slate-800 pt-5 text-sm text-slate-400">
+                      <CalendarDays size={16} className="text-indigo-400" />
+
                       Registered on:{" "}
-                      {new Date(registration.createdAt).toLocaleDateString(
-                        "en-IN",
-                        {
+                      <span className="font-medium text-white">
+                        {new Date(
+                          registration.createdAt
+                        ).toLocaleDateString("en-IN", {
                           day: "2-digit",
                           month: "long",
                           year: "numeric",
-                        }
-                      )}
+                        })}
+                      </span>
                     </div>
                   )}
+
                 </div>
               )}
             </section>
           </div>
 
-          {/* Right Column / Quick Guidelines */}
-          <div className="space-y-6">
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-              <h3 className="text-base font-bold text-white">
-                Hackathon Next Steps
-              </h3>
+          {/* RIGHT COLUMN */}
 
-              <ul className="mt-4 space-y-3 text-xs text-slate-300">
-                <li className="flex gap-2">
-                  <span className="font-bold text-indigo-400">1.</span>
-                  <span>Keep your presentation slides and prototype link public so judges can access them.</span>
+          <div className="space-y-6">
+
+            {/* NEXT STEPS */}
+
+            <section className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400">
+                  <Activity size={22} />
+                </div>
+
+                <h3 className="text-lg font-bold text-white">
+                  Hackathon Next Steps
+                </h3>
+              </div>
+
+              <ul className="mt-6 space-y-5 text-sm leading-6 text-slate-300">
+                <li className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 text-xs font-bold text-indigo-400">
+                    1
+                  </span>
+
+                  <span>
+                    Keep your presentation slides and prototype link
+                    accessible so judges can review them.
+                  </span>
                 </li>
-                <li className="flex gap-2">
-                  <span className="font-bold text-indigo-400">2.</span>
-                  <span>Check your email (including spam) for updates sent from <strong>matrucareai@gmail.com</strong>.</span>
+
+                <li className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 text-xs font-bold text-indigo-400">
+                    2
+                  </span>
+
+                  <span>
+                    Check your email, including spam, for updates from
+                    matrucareai@gmail.com.
+                  </span>
                 </li>
-                <li className="flex gap-2">
-                  <span className="font-bold text-indigo-400">3.</span>
-                  <span>Mentorship notifications and final round shortlist will be announced on the portal.</span>
+
+                <li className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 text-xs font-bold text-indigo-400">
+                    3
+                  </span>
+
+                  <span>
+                    Keep checking the portal for hackathon announcements
+                    and further updates.
+                  </span>
                 </li>
               </ul>
             </section>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-              <h3 className="text-base font-bold text-white">
-                Need Help?
-              </h3>
+            {/* ACCOUNT SECURITY */}
 
-              <p className="mt-2 text-xs text-slate-400 leading-5">
-                For questions regarding your registration, write to our team directly:
+            <section className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
+                  <ShieldCheck size={22} />
+                </div>
+
+                <h3 className="text-lg font-bold text-white">
+                  Account Security
+                </h3>
+              </div>
+
+              <p className="mt-4 text-sm leading-7 text-slate-400">
+                Your account is protected through email verification
+                and secure authentication.
+              </p>
+
+              <div className="mt-5 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm font-medium text-emerald-400">
+                <CheckCircle2 size={17} />
+                Email verified
+              </div>
+            </section>
+
+            {/* HELP */}
+
+            <section className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+                  <Mail size={22} />
+                </div>
+
+                <h3 className="text-lg font-bold text-white">
+                  Need Help?
+                </h3>
+              </div>
+
+              <p className="mt-4 text-sm leading-7 text-slate-400">
+                For questions regarding your registration, contact
+                the MatruCare AI team.
               </p>
 
               <a
                 href="mailto:matrucareai@gmail.com"
-                className="mt-3 inline-block font-mono text-xs font-semibold text-indigo-400 hover:underline"
+                className="mt-4 inline-block break-all text-sm font-semibold text-indigo-400 transition hover:text-cyan-400"
               >
                 matrucareai@gmail.com
               </a>
             </section>
+
           </div>
         </div>
       </main>
 
-      <Footer />
+      {/* FOOTER */}
+
+      <div className="relative z-10">
+        <Footer />
+      </div>
     </div>
   );
 };

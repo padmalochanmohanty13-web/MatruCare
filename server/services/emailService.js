@@ -1,11 +1,11 @@
+
 import nodemailer from "nodemailer";
-import { Resend } from "resend";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const SENDER_NAME = "MatruCare AI";
+const SENDER_EMAIL = "matrucareai1@gmail.com";
 
-// Escape user-provided values before inserting them into HTML.
-const escapeHtml = (value = "") => {
-  return String(value).replace(/[&<>"']/g, (character) => {
+const escapeHtml = (value = "") =>
+  String(value).replace(/[&<>"']/g, (character) => {
     const entities = {
       "&": "&amp;",
       "<": "&lt;",
@@ -13,77 +13,146 @@ const escapeHtml = (value = "") => {
       '"': "&quot;",
       "'": "&#39;",
     };
+
     return entities[character];
   });
-};
 
-// ─── Sender strategy ─────────────────────────────────────────────────────────
-// If RESEND_API_KEY is set → use Resend HTTP API (works on Render Free Tier).
-// Otherwise fall back to Nodemailer + Gmail SMTP (works locally / on paid hosts).
+// Create a Gmail SMTP transporter using environment variables only.
+const createTransporter = () => {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT || 465);
+  const user = process.env.SMTP_USER?.trim();
+  const pass = (
+    process.env.SMTP_PASS ||
+    process.env.EMAIL_PASS ||
+    ""
+  ).trim();
 
-const sendViaResend = async ({ to, subject, text, html }) => {
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const from = process.env.RESEND_FROM || "MatruCare AI <onboarding@resend.dev>";
-
-  const { error } = await resend.emails.send({ from, to, subject, text, html });
-  if (error) throw new Error(error.message || JSON.stringify(error));
-};
-
-const sendViaNodemailer = async ({ to, subject, text, html }) => {
-  const user = process.env.EMAIL_USER || process.env.SMTP_USER || "matrucareai1@gmail.com";
-  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk";
-  const from = process.env.EMAIL_FROM || "matrucareai@gmail.com";
-
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user, pass },
-  });
-
-  await transporter.sendMail({
-    from: { name: "MatruCare AI", address: from },
-    to,
-    subject,
-    text,
-    html,
-  });
-};
-
-const sendEmail = async (payload) => {
-  if (process.env.RESEND_API_KEY) {
-    console.log("[EMAIL] Sending via Resend HTTP API...");
-    return sendViaResend(payload);
+  if (!user || !pass) {
+    throw new Error(
+      "Email configuration missing: SMTP_USER and SMTP_PASS are required."
+    );
   }
-  console.log("[EMAIL] Sending via Nodemailer (Gmail SMTP)...");
-  return sendViaNodemailer(payload);
+
+  if (user.toLowerCase() !== SENDER_EMAIL) {
+    throw new Error(
+      `SMTP_USER must be ${SENDER_EMAIL} for the assignment sender identity.`
+    );
+  }
+
+  if (![465, 587].includes(port)) {
+    throw new Error("SMTP_PORT must be 465 or 587.");
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass,
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+  });
 };
 
-// ─── OTP email ───────────────────────────────────────────────────────────────
+// Shared email sender used by all controllers.
+export const sendEmail = async ({
+  to,
+  subject,
+  text,
+  html,
+  replyTo,
+}) => {
+  if (!to || !subject || (!text && !html)) {
+    throw new Error("Recipient, subject and email content are required.");
+  }
 
+  const transporter = createTransporter();
+
+  try {
+    const result = await transporter.sendMail({
+      from: {
+        name: SENDER_NAME,
+        address: SENDER_EMAIL,
+      },
+      to,
+      subject,
+      text,
+      html,
+      ...(replyTo ? { replyTo } : {}),
+    });
+
+    console.log("[EMAIL] Message accepted:", {
+      messageId: result.messageId,
+      recipient: to,
+    });
+
+    return result;
+  } catch (error) {
+    console.error("[EMAIL] Delivery failed:", {
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      message: error.message,
+    });
+
+    throw error;
+  } finally {
+    transporter.close();
+  }
+};
+
+// Verify the Gmail SMTP connection manually when needed.
+export const verifyEmailConnection = async () => {
+  const transporter = createTransporter();
+
+  try {
+    await transporter.verify();
+    console.log("[EMAIL] Gmail SMTP connection verified.");
+    return true;
+  } finally {
+    transporter.close();
+  }
+};
+
+// 1. OTP verification email.
 export const sendOtpEmail = async (email, otp) => {
-  await sendEmail({
+  const safeOtp = escapeHtml(otp);
+
+  return sendEmail({
     to: email,
     subject: "Your MatruCare AI Verification Code",
-    text: `Your MatruCare AI verification OTP is ${otp}. It expires in 10 minutes.`,
+    text: [
+      "MatruCare AI Email Verification",
+      "",
+      `Your verification code is: ${otp}`,
+      "This code expires in 10 minutes.",
+      "It can only be used once.",
+      "",
+      "If you did not request this code, please ignore this email.",
+      "",
+      "Regards,",
+      "MatruCare AI",
+    ].join("\n"),
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
-        <h2 style="color: #4338ca; margin-bottom: 8px;">MatruCare AI</h2>
-        <p style="font-size: 15px; color: #374151;">Hello,</p>
-        <p style="font-size: 14px; color: #4b5563;">Use the following 6-digit OTP to verify your email address for the <strong>MatruCare AI Hackathon Portal</strong>:</p>
-        <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 16px; background: #f3f4f6; text-align: center; border-radius: 8px; margin: 20px 0; color: #1e1b4b;">
-          ${escapeHtml(otp)}
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
+        <h2 style="color:#4338ca;">MatruCare AI</h2>
+        <p>Use this 6-digit code to verify your email address.</p>
+        <div style="font-size:32px;font-weight:bold;letter-spacing:8px;padding:18px;background:#f3f4f6;text-align:center;border-radius:8px;">
+          ${safeOtp}
         </div>
-        <p style="font-size: 14px; color: #6b7280;">This OTP is time-limited and expires in <strong>10 minutes</strong>. It will be invalidated after first use.</p>
-        <p style="font-size: 14px; color: #6b7280;">If you did not request this verification code, please ignore this email.</p>
-        <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 24px;">
-          <p style="margin: 0; font-size: 14px; color: #374151;">Regards,<br/><strong style="color: #4338ca;">MatruCare AI Team</strong></p>
-        </div>
+        <p>This code expires in <strong>10 minutes</strong> and is valid for one use only.</p>
+        <p>If you did not request this code, please ignore this email.</p>
+        <p>Regards,<br/><strong>MatruCare AI</strong></p>
       </div>
     `,
   });
 };
 
-// ─── Registration confirmation email ─────────────────────────────────────────
-
+// 2. Hackathon registration confirmation email.
 export const sendRegistrationConfirmationEmail = async (registration) => {
   const {
     fullName,
@@ -103,182 +172,192 @@ export const sendRegistrationConfirmationEmail = async (registration) => {
     createdAt,
   } = registration;
 
-  const safeName = escapeHtml(fullName);
-  const safeDomain = escapeHtml(domain);
-  const safeProjectName = escapeHtml(projectName);
-  const safeCollege = escapeHtml(collegeName);
+  const safe = {
+    fullName: escapeHtml(fullName),
+    email: escapeHtml(email),
+    mobileNumber: escapeHtml(mobileNumber),
+    collegeName: escapeHtml(collegeName),
+    course: escapeHtml(course),
+    branch: escapeHtml(branch),
+    yearOfStudy: escapeHtml(yearOfStudy),
+    domain: escapeHtml(domain),
+    projectName: escapeHtml(projectName),
+    pptLink: escapeHtml(pptLink),
+    prototypeLink: escapeHtml(prototypeLink),
+    demoVideoLink: escapeHtml(demoVideoLink || ""),
+    teamSize: escapeHtml(teamSize),
+  };
 
-  const teamMembersText =
-    teamMembers.length > 0
-      ? teamMembers
-          .map((member, index) => `${index + 2}. ${member.fullName} (${member.email})`)
-          .join("\n")
-      : "No additional team members. Individual registration.";
+  const safeMembers = teamMembers.map((member) => ({
+    fullName: escapeHtml(member.fullName),
+    email: escapeHtml(member.email),
+  }));
 
-  const teamMembersHtml =
-    teamMembers.length > 0
-      ? teamMembers
-          .map(
-            (member, index) => `
-              <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${index + 2}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(member.fullName)}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(member.email)}</td>
-              </tr>
-            `
-          )
-          .join("")
-      : `
+  const memberText = safeMembers.length
+    ? safeMembers
+        .map((member, index) =>
+          `${index + 2}. ${member.fullName} (${member.email})`
+        )
+        .join("\n")
+    : "No additional members. Individual registration.";
+
+  const memberRows = safeMembers.length
+    ? safeMembers
+        .map(
+          (member, index) => `
+            <tr>
+              <td style="padding:9px;border-bottom:1px solid #e5e7eb;">${index + 2}</td>
+              <td style="padding:9px;border-bottom:1px solid #e5e7eb;">${member.fullName}</td>
+              <td style="padding:9px;border-bottom:1px solid #e5e7eb;">${member.email}</td>
+            </tr>
+          `
+        )
+        .join("")
+    : `
         <tr>
-          <td colspan="3" style="padding: 12px; color: #6b7280;">
-            Individual registration – no additional team members.
-          </td>
+          <td colspan="3" style="padding:10px;">Individual registration</td>
         </tr>
       `;
 
   const registrationDate = createdAt
-    ? new Date(createdAt).toLocaleString("en-IN", {
-        dateStyle: "medium",
-        timeStyle: "short",
-        timeZone: "Asia/Kolkata",
-      })
-    : new Date().toLocaleString("en-IN", {
-        dateStyle: "medium",
-        timeStyle: "short",
-        timeZone: "Asia/Kolkata",
-      });
+    ? new Date(createdAt)
+    : new Date();
+
+  const formattedDate = registrationDate.toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata",
+  });
 
   const text = `
-Hello ${fullName},
+MatruCare AI Hackathon Registration Confirmation
 
-Congratulations! Your registration for the MatruCare AI Hackathon 2026 has been successfully received.
-
-EVENT DETAILS
-Event: MatruCare AI Hackathon 2026
-Domain / Track: ${domain}
-Project Name: ${projectName}
+Your registration has been received successfully.
 
 PARTICIPANT DETAILS
-Participant Name: ${fullName}
+Name: ${fullName}
 Email: ${email}
-Mobile Number: ${mobileNumber}
+Mobile: ${mobileNumber}
 College: ${collegeName}
 Course: ${course}
 Branch: ${branch}
-Year of Study: ${yearOfStudy}
+Year: ${yearOfStudy}
 
-PROJECT RESOURCES
-PPT Link: ${pptLink}
-Prototype Link: ${prototypeLink}
-Demo Video Link: ${demoVideoLink || "Not provided"}
+PROJECT DETAILS
+Domain: ${domain}
+Project: ${projectName}
+PPT: ${pptLink}
+Prototype: ${prototypeLink}
+Demo Video: ${demoVideoLink || "Not provided"}
 
 TEAM DETAILS
 Team Size: ${teamSize}
-Team Members:
 1. ${fullName} (Team Lead - ${email})
-${teamMembersText}
+${memberText}
 
-Registration Date: ${registrationDate}
-
-Please keep this confirmation email for your records.
+Registration Date: ${formattedDate}
 
 Regards,
-MatruCare AI Team
-matrucareai@gmail.com
+MatruCare AI
+${SENDER_EMAIL}
   `.trim();
 
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 20px auto; padding: 28px; color: #1f2937; border: 1px solid #e5e7eb; border-radius: 14px;">
+    <div style="font-family:Arial,sans-serif;max-width:650px;margin:20px auto;padding:26px;color:#1f2937;border:1px solid #e5e7eb;border-radius:12px;">
+      <h1 style="color:#4338ca;text-align:center;">MatruCare AI</h1>
+      <h2 style="color:#16a34a;text-align:center;">Registration Confirmed!</h2>
 
-      <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
-        <h1 style="color: #4338ca; margin-bottom: 8px;">MatruCare AI</h1>
-        <p style="color: #16a34a; font-size: 18px; font-weight: bold; margin: 0;">
-          Hackathon Registration Confirmed!
-        </p>
-        <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">
-          MatruCare AI Hackathon 2026
-        </p>
-      </div>
+      <p>Hello <strong>${safe.fullName}</strong>,</p>
+      <p>Your registration for the MatruCare AI Hackathon has been received successfully.</p>
 
-      <p style="margin-top: 20px; font-size: 15px;">Hello <strong>${safeName}</strong>,</p>
+      <h3>Participant Details</h3>
+      <p><strong>Email:</strong> ${safe.email}</p>
+      <p><strong>Mobile:</strong> ${safe.mobileNumber}</p>
+      <p><strong>College:</strong> ${safe.collegeName}</p>
+      <p><strong>Course:</strong> ${safe.course}</p>
+      <p><strong>Branch:</strong> ${safe.branch}</p>
+      <p><strong>Year:</strong> ${safe.yearOfStudy}</p>
 
-      <p style="font-size: 14px; line-height: 1.6; color: #374151;">
-        Congratulations! Your registration for the
-        <strong>MatruCare AI Hackathon 2026</strong> has been successfully received.
-      </p>
+      <h3>Project Details</h3>
+      <p><strong>Domain:</strong> ${safe.domain}</p>
+      <p><strong>Project:</strong> ${safe.projectName}</p>
+      <p><a href="${safe.pptLink}">View Presentation</a></p>
+      <p><a href="${safe.prototypeLink}">View Prototype</a></p>
+      ${
+        safe.demoVideoLink
+          ? `<p><a href="${safe.demoVideoLink}">Watch Demo Video</a></p>`
+          : "<p>Demo video: Not provided</p>"
+      }
 
-      <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #bbf7d0;">
-        <h3 style="color: #166534; margin-top: 0; margin-bottom: 12px;">Participant Details</h3>
-        <p style="margin: 6px 0;"><strong>Participant:</strong> ${safeName}</p>
-        <p style="margin: 6px 0;"><strong>Email:</strong> ${escapeHtml(email)}</p>
-        <p style="margin: 6px 0;"><strong>Mobile:</strong> ${escapeHtml(mobileNumber)}</p>
-        <p style="margin: 6px 0;"><strong>College:</strong> ${safeCollege}</p>
-        <p style="margin: 6px 0;"><strong>Course:</strong> ${escapeHtml(course)}</p>
-        <p style="margin: 6px 0;"><strong>Branch:</strong> ${escapeHtml(branch)}</p>
-        <p style="margin: 6px 0;"><strong>Year:</strong> ${escapeHtml(yearOfStudy)}</p>
-      </div>
+      <h3>Team Details (Size: ${safe.teamSize})</h3>
+      <table style="width:100%;border-collapse:collapse;text-align:left;">
+        <thead>
+          <tr>
+            <th style="padding:9px;">No.</th>
+            <th style="padding:9px;">Name</th>
+            <th style="padding:9px;">Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:9px;">1 (Lead)</td>
+            <td style="padding:9px;">${safe.fullName}</td>
+            <td style="padding:9px;">${safe.email}</td>
+          </tr>
+          ${memberRows}
+        </tbody>
+      </table>
 
-      <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
-        <h3 style="color: #4338ca; margin-top: 0; margin-bottom: 12px;">Project Details</h3>
-        <p style="margin: 6px 0;"><strong>Domain / Track:</strong> ${safeDomain}</p>
-        <p style="margin: 6px 0;"><strong>Project Name:</strong> ${safeProjectName}</p>
-        <p style="margin: 6px 0;">
-          <strong>PPT Link:</strong>
-          <a href="${escapeHtml(pptLink)}" style="color: #4f46e5; text-decoration: underline;" target="_blank">View Presentation</a>
-        </p>
-        <p style="margin: 6px 0;">
-          <strong>Prototype Link:</strong>
-          <a href="${escapeHtml(prototypeLink)}" style="color: #4f46e5; text-decoration: underline;" target="_blank">View Prototype</a>
-        </p>
-        ${
-          demoVideoLink
-            ? `<p style="margin: 6px 0;"><strong>Demo Video:</strong> <a href="${escapeHtml(demoVideoLink)}" style="color: #4f46e5; text-decoration: underline;" target="_blank">Watch Video</a></p>`
-            : '<p style="margin: 6px 0;"><strong>Demo Video:</strong> Not provided</p>'
-        }
-      </div>
-
-      <div style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin: 20px 0;">
-        <h3 style="margin-top: 0; color: #1f2937; margin-bottom: 12px;">Team Details (Size: ${escapeHtml(String(teamSize))})</h3>
-
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-          <thead>
-            <tr style="background: #f3f4f6;">
-              <th style="padding: 10px; border-bottom: 1px solid #e5e7eb;">No.</th>
-              <th style="padding: 10px; border-bottom: 1px solid #e5e7eb;">Name</th>
-              <th style="padding: 10px; border-bottom: 1px solid #e5e7eb;">Email</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">1 (Lead)</td>
-              <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${safeName}</td>
-              <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(email)}</td>
-            </tr>
-            ${teamMembersHtml}
-          </tbody>
-        </table>
-      </div>
-
-      <p style="font-size: 14px; color: #4b5563;"><strong>Registration Date:</strong> ${escapeHtml(registrationDate)}</p>
-
-      <p style="font-size: 14px; color: #4b5563;">
-        Please keep this confirmation email for your records. We look forward to seeing your project in action!
-      </p>
-
-      <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 24px;">
-        <p style="margin: 0; font-size: 14px; color: #4b5563;">Regards,</p>
-        <strong style="color: #4338ca; font-size: 15px;">MatruCare AI Team</strong><br/>
-        <span style="font-size: 13px; color: #6b7280;">matrucareai@gmail.com</span>
-      </div>
-
+      <p><strong>Registration Date:</strong> ${escapeHtml(formattedDate)}</p>
+      <p>Thank you for participating.</p>
+      <p>Regards,<br/><strong>MatruCare AI</strong><br/>${SENDER_EMAIL}</p>
     </div>
   `;
 
-  await sendEmail({
+  return sendEmail({
     to: email,
     subject: "MatruCare AI Hackathon - Registration Confirmation",
     text,
     html,
+  });
+};
+
+// 3. Contact form email.
+export const sendContactEmail = async ({
+  name,
+  email,
+  subject,
+  message,
+}) => {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeSubject = escapeHtml(subject);
+  const safeMessage = escapeHtml(message);
+
+  return sendEmail({
+    to: SENDER_EMAIL,
+    replyTo: email,
+    subject: `[MatruCare AI] Contact Enquiry: ${subject}`,
+    text: [
+      "New contact enquiry received.",
+      "",
+      `Name: ${name}`,
+      `Email: ${email}`,
+      `Subject: ${subject}`,
+      "",
+      "Message:",
+      message,
+    ].join("\n"),
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;">
+        <h2>MatruCare AI - Contact Enquiry</h2>
+        <p><strong>Name:</strong> ${safeName}</p>
+        <p><strong>Email:</strong> ${safeEmail}</p>
+        <p><strong>Subject:</strong> ${safeSubject}</p>
+        <p><strong>Message:</strong></p>
+        <p style="white-space:pre-wrap;">${safeMessage}</p>
+      </div>
+    `,
   });
 };
 
