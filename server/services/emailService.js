@@ -1,25 +1,7 @@
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const createTransporter = () => {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT);
-  const user = process.env.EMAIL_USER || process.env.SMTP_USER || "matrucareai1@gmail.com";
-  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk";
-
-  if (host && port) {
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
-  }
-
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { user, pass },
-  });
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // Escape user-provided values before inserting them into HTML.
 const escapeHtml = (value = "") => {
@@ -31,21 +13,54 @@ const escapeHtml = (value = "") => {
       '"': "&quot;",
       "'": "&#39;",
     };
-
     return entities[character];
   });
 };
 
-// User Signup (OTP) email
-export const sendOtpEmail = async (email, otp) => {
-  const transporter = createTransporter();
-  const fromEmail = process.env.EMAIL_FROM || "matrucareai@gmail.com";
+// ─── Sender strategy ─────────────────────────────────────────────────────────
+// If RESEND_API_KEY is set → use Resend HTTP API (works on Render Free Tier).
+// Otherwise fall back to Nodemailer + Gmail SMTP (works locally / on paid hosts).
+
+const sendViaResend = async ({ to, subject, text, html }) => {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = process.env.RESEND_FROM || "MatruCare AI <onboarding@resend.dev>";
+
+  const { error } = await resend.emails.send({ from, to, subject, text, html });
+  if (error) throw new Error(error.message || JSON.stringify(error));
+};
+
+const sendViaNodemailer = async ({ to, subject, text, html }) => {
+  const user = process.env.EMAIL_USER || process.env.SMTP_USER || "matrucareai1@gmail.com";
+  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS || "edsoomvryczrnquk";
+  const from = process.env.EMAIL_FROM || "matrucareai@gmail.com";
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
 
   await transporter.sendMail({
-    from: {
-      name: "MatruCare AI",
-      address: fromEmail,
-    },
+    from: { name: "MatruCare AI", address: from },
+    to,
+    subject,
+    text,
+    html,
+  });
+};
+
+const sendEmail = async (payload) => {
+  if (process.env.RESEND_API_KEY) {
+    console.log("[EMAIL] Sending via Resend HTTP API...");
+    return sendViaResend(payload);
+  }
+  console.log("[EMAIL] Sending via Nodemailer (Gmail SMTP)...");
+  return sendViaNodemailer(payload);
+};
+
+// ─── OTP email ───────────────────────────────────────────────────────────────
+
+export const sendOtpEmail = async (email, otp) => {
+  await sendEmail({
     to: email,
     subject: "Your MatruCare AI Verification Code",
     text: `Your MatruCare AI verification OTP is ${otp}. It expires in 10 minutes.`,
@@ -67,11 +82,9 @@ export const sendOtpEmail = async (email, otp) => {
   });
 };
 
-// Hackathon registration confirmation email
-export const sendRegistrationConfirmationEmail = async (registration) => {
-  const transporter = createTransporter();
-  const fromEmail = process.env.EMAIL_FROM || "matrucareai@gmail.com";
+// ─── Registration confirmation email ─────────────────────────────────────────
 
+export const sendRegistrationConfirmationEmail = async (registration) => {
   const {
     fullName,
     email,
@@ -98,10 +111,7 @@ export const sendRegistrationConfirmationEmail = async (registration) => {
   const teamMembersText =
     teamMembers.length > 0
       ? teamMembers
-          .map(
-            (member, index) =>
-              `${index + 2}. ${member.fullName} (${member.email})`
-          )
+          .map((member, index) => `${index + 2}. ${member.fullName} (${member.email})`)
           .join("\n")
       : "No additional team members. Individual registration.";
 
@@ -111,15 +121,9 @@ export const sendRegistrationConfirmationEmail = async (registration) => {
           .map(
             (member, index) => `
               <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
-                  ${index + 2}
-                </td>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
-                  ${escapeHtml(member.fullName)}
-                </td>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
-                  ${escapeHtml(member.email)}
-                </td>
+                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${index + 2}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(member.fullName)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(member.email)}</td>
               </tr>
             `
           )
@@ -234,7 +238,7 @@ matrucareai@gmail.com
       </div>
 
       <div style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin: 20px 0;">
-        <h3 style="margin-top: 0; color: #1f2937; margin-bottom: 12px;">Team Details (Size: ${escapeHtml(teamSize)})</h3>
+        <h3 style="margin-top: 0; color: #1f2937; margin-bottom: 12px;">Team Details (Size: ${escapeHtml(String(teamSize))})</h3>
 
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
           <thead>
@@ -270,11 +274,7 @@ matrucareai@gmail.com
     </div>
   `;
 
-  await transporter.sendMail({
-    from: {
-      name: "MatruCare AI",
-      address: fromEmail,
-    },
+  await sendEmail({
     to: email,
     subject: "MatruCare AI Hackathon - Registration Confirmation",
     text,
