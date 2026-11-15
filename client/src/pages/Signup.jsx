@@ -47,8 +47,10 @@ const Signup = () => {
 
     const fullName = formData.fullName.trim();
     const email = formData.email.trim().toLowerCase();
+    const password = formData.password;
+    const confirmPassword = formData.confirmPassword;
 
-    if (!fullName || !email || !formData.password || !formData.confirmPassword) {
+    if (!fullName || !email || !password || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
@@ -58,12 +60,12 @@ const Signup = () => {
       return;
     }
 
-    if (formData.password.length < 8) {
+    if (password.length < 8) {
       setError("Password must contain at least 8 characters.");
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
@@ -71,10 +73,12 @@ const Signup = () => {
     try {
       setLoading(true);
 
+      // Send ALL required fields to the backend.
       await signup({
         fullName,
         email,
-        password: formData.password,
+        password,
+        confirmPassword,
       });
 
       navigate("/verify-otp", {
@@ -82,9 +86,11 @@ const Signup = () => {
         replace: true,
       });
     } catch (err) {
+      console.error("Signup error:", err.response?.data || err);
+
       setError(
         err.response?.data?.message ||
-        "Unable to create your account. Please try again."
+          "Unable to create your account. Please try again."
       );
     } finally {
       setLoading(false);
@@ -96,13 +102,10 @@ const Signup = () => {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#030617] px-4 py-10 text-white">
-      {/* Background glow */}
       <div className="pointer-events-none absolute -left-40 top-10 h-96 w-96 rounded-full bg-violet-700/10 blur-[120px]" />
       <div className="pointer-events-none absolute -right-40 bottom-0 h-96 w-96 rounded-full bg-blue-600/10 blur-[120px]" />
 
-      {/* Signup card */}
       <section className="relative z-10 w-full max-w-[650px] rounded-[32px] border border-slate-800 bg-[#0f172a] px-6 py-10 shadow-2xl shadow-black/30 sm:px-10 sm:py-12 lg:px-[50px]">
-        {/* Heading */}
         <div className="mb-10 flex items-start justify-between gap-4">
           <div>
             <p className="mb-5 text-base font-bold tracking-wider text-indigo-400">
@@ -123,7 +126,6 @@ const Signup = () => {
           </div>
         </div>
 
-        {/* Error message */}
         {error && (
           <div
             role="alert"
@@ -133,9 +135,7 @@ const Signup = () => {
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Full name */}
           <div>
             <label
               htmlFor="fullName"
@@ -165,7 +165,6 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Email */}
           <div>
             <label
               htmlFor="email"
@@ -195,7 +194,6 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Password */}
           <div>
             <label
               htmlFor="password"
@@ -235,7 +233,6 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Confirm password */}
           <div>
             <label
               htmlFor="confirmPassword"
@@ -280,7 +277,6 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -300,7 +296,6 @@ const Signup = () => {
           </button>
         </form>
 
-        {/* Divider */}
         <div className="my-9 flex items-center gap-5">
           <div className="h-px flex-1 bg-slate-700" />
           <span className="text-sm tracking-widest text-slate-500">
@@ -309,7 +304,6 @@ const Signup = () => {
           <div className="h-px flex-1 bg-slate-700" />
         </div>
 
-        {/* Login link */}
         <p className="text-center text-base text-slate-400">
           Already have an account?{" "}
           <Link
