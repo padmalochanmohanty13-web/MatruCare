@@ -2,8 +2,54 @@
 import nodemailer from "nodemailer";
 
 const SENDER_NAME = "MatruCare AI";
-const SENDER_EMAIL = "matrucareai1@gmail.com";
 
+const SENDER_EMAIL =
+  process.env.EMAIL_FROM ||
+  `${SENDER_NAME} <${process.env.SMTP_USER}>`;
+
+let transporter = null;
+
+// Create Gmail SMTP transporter.
+const getTransporter = () => {
+  const smtpUser = process.env.SMTP_USER?.trim();
+  const smtpPass = process.env.SMTP_PASS?.replace(/\s/g, "");
+
+  if (!smtpUser || !smtpPass) {
+    throw new Error(
+      "Email configuration missing: SMTP_USER and SMTP_PASS are required."
+    );
+  }
+
+  if (!transporter) {
+    const smtpPort = Number(process.env.SMTP_PORT || 465);
+
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+  }
+
+  return transporter;
+};
+
+// Check Gmail SMTP connection.
+export const verifyEmailConnection = async () => {
+  try {
+    await getTransporter().verify();
+    console.log("[EMAIL] Gmail SMTP connection verified.");
+    return true;
+  } catch (error) {
+    console.error("[EMAIL] Gmail SMTP verification failed:", error.message);
+    throw error;
+  }
+};
+
+// Escape HTML to prevent HTML injection.
 const escapeHtml = (value = "") =>
   String(value).replace(/[&<>"']/g, (character) => {
     const entities = {
@@ -17,48 +63,7 @@ const escapeHtml = (value = "") =>
     return entities[character];
   });
 
-// Create a Gmail SMTP transporter using environment variables only.
-const createTransporter = () => {
-  const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const port = Number(process.env.SMTP_PORT || 465);
-  const user = process.env.SMTP_USER?.trim();
-  const pass = (
-    process.env.SMTP_PASS ||
-    process.env.EMAIL_PASS ||
-    ""
-  ).trim();
-
-  if (!user || !pass) {
-    throw new Error(
-      "Email configuration missing: SMTP_USER and SMTP_PASS are required."
-    );
-  }
-
-  if (user.toLowerCase() !== SENDER_EMAIL) {
-    throw new Error(
-      `SMTP_USER must be ${SENDER_EMAIL} for the assignment sender identity.`
-    );
-  }
-
-  if (![465, 587].includes(port)) {
-    throw new Error("SMTP_PORT must be 465 or 587.");
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: {
-      user,
-      pass,
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 20000,
-  });
-};
-
-// Shared email sender used by all controllers.
+// Shared email sender.
 export const sendEmail = async ({
   to,
   subject,
@@ -67,17 +72,16 @@ export const sendEmail = async ({
   replyTo,
 }) => {
   if (!to || !subject || (!text && !html)) {
-    throw new Error("Recipient, subject and email content are required.");
+    throw new Error(
+      "Recipient, subject and email content are required."
+    );
   }
 
-  const transporter = createTransporter();
-
   try {
-    const result = await transporter.sendMail({
-      from: {
-        name: SENDER_NAME,
-        address: SENDER_EMAIL,
-      },
+    const mailer = getTransporter();
+
+    const info = await mailer.sendMail({
+      from: SENDER_EMAIL,
       to,
       subject,
       text,
@@ -85,36 +89,19 @@ export const sendEmail = async ({
       ...(replyTo ? { replyTo } : {}),
     });
 
-    console.log("[EMAIL] Message accepted:", {
-      messageId: result.messageId,
+    console.log("[EMAIL] Gmail message sent successfully:", {
+      messageId: info.messageId,
       recipient: to,
     });
 
-    return result;
+    return info;
   } catch (error) {
-    console.error("[EMAIL] Delivery failed:", {
+    console.error("[EMAIL] Gmail delivery failed:", {
       code: error.code,
-      command: error.command,
-      responseCode: error.responseCode,
       message: error.message,
     });
 
     throw error;
-  } finally {
-    transporter.close();
-  }
-};
-
-// Verify the Gmail SMTP connection manually when needed.
-export const verifyEmailConnection = async () => {
-  const transporter = createTransporter();
-
-  try {
-    await transporter.verify();
-    console.log("[EMAIL] Gmail SMTP connection verified.");
-    return true;
-  } finally {
-    transporter.close();
   }
 };
 
@@ -125,6 +112,7 @@ export const sendOtpEmail = async (email, otp) => {
   return sendEmail({
     to: email,
     subject: "Your MatruCare AI Verification Code",
+
     text: [
       "MatruCare AI Email Verification",
       "",
@@ -135,8 +123,9 @@ export const sendOtpEmail = async (email, otp) => {
       "If you did not request this code, please ignore this email.",
       "",
       "Regards,",
-      "MatruCare AI",
+      SENDER_NAME,
     ].join("\n"),
+
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
         <h2 style="color:#4338ca;">MatruCare AI</h2>
@@ -195,8 +184,9 @@ export const sendRegistrationConfirmationEmail = async (registration) => {
 
   const memberText = safeMembers.length
     ? safeMembers
-        .map((member, index) =>
-          `${index + 2}. ${member.fullName} (${member.email})`
+        .map(
+          (member, index) =>
+            `${index + 2}. ${member.fullName} (${member.email})`
         )
         .join("\n")
     : "No additional members. Individual registration.";
@@ -258,8 +248,7 @@ ${memberText}
 Registration Date: ${formattedDate}
 
 Regards,
-MatruCare AI
-${SENDER_EMAIL}
+${SENDER_NAME}
   `.trim();
 
   const html = `
@@ -310,7 +299,7 @@ ${SENDER_EMAIL}
 
       <p><strong>Registration Date:</strong> ${escapeHtml(formattedDate)}</p>
       <p>Thank you for participating.</p>
-      <p>Regards,<br/><strong>MatruCare AI</strong><br/>${SENDER_EMAIL}</p>
+      <p>Regards,<br/><strong>MatruCare AI</strong></p>
     </div>
   `;
 
@@ -335,9 +324,10 @@ export const sendContactEmail = async ({
   const safeMessage = escapeHtml(message);
 
   return sendEmail({
-    to: SENDER_EMAIL,
+    to: process.env.CONTACT_EMAIL || "matrucareai1@gmail.com",
     replyTo: email,
     subject: `[MatruCare AI] Contact Enquiry: ${subject}`,
+
     text: [
       "New contact enquiry received.",
       "",
@@ -348,6 +338,7 @@ export const sendContactEmail = async ({
       "Message:",
       message,
     ].join("\n"),
+
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;">
         <h2>MatruCare AI - Contact Enquiry</h2>
